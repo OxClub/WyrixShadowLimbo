@@ -3,11 +3,49 @@ package com.wyrix.shadowlimbo
 import android.content.Context
 import org.json.JSONObject
 
-data class SolidBlock(val x: Float, val y: Float, val w: Float, val h: Float)
+data class SolidBlock(
+    val x: Float,
+    val y: Float,
+    val w: Float,
+    val h: Float,
+    val crumbling: Boolean = false,
+    var crumbleTimer: Float = 0f,
+    var fallenOffsetY: Float = 0f
+)
+
 data class PushCrate(var x: Float, var y: Float, val w: Float, val h: Float, var vx: Float = 0f, var vy: Float = 0f)
 data class FloorSwitch(val x: Float, val y: Float, val w: Float, val h: Float, val gateIndex: Int, var pressed: Boolean = false)
 data class IronGate(val x: Float, val y: Float, val w: Float, val baseH: Float, var currentH: Float = baseH)
-data class HazardObj(var x: Float, val y: Float, val w: Float, val h: Float, val type: String, var vx: Float, val minX: Float, val maxX: Float)
+
+data class HangingRope(
+    val anchorX: Float,
+    val anchorY: Float,
+    val length: Float,
+    var angle: Float = 0.25f,
+    var angVel: Float = 0f
+)
+
+data class CrusherObj(
+    val x: Float,
+    val topY: Float,
+    val w: Float,
+    val maxDrop: Float,
+    val speed: Float,
+    val phase: Float,
+    var currentDrop: Float = 0f
+)
+
+data class HazardObj(
+    var x: Float,
+    var y: Float,
+    val w: Float,
+    val h: Float,
+    val type: String, // "saw", "trap", "spider", "water"
+    var vx: Float,
+    val minX: Float,
+    val maxX: Float
+)
+
 data class StoryCue(val x: Float, val text: String, var triggered: Boolean = false)
 
 data class ChapterSpec(
@@ -18,6 +56,7 @@ data class ChapterSpec(
     val skyBottom: Int,
     val fogAlpha: Float,
     val bgTheme: String,
+    val windForce: Float,
     val audioTrack: String,
     val spawnX: Float,
     val spawnY: Float,
@@ -28,6 +67,8 @@ data class ChapterSpec(
     val crates: List<PushCrate>,
     val switches: List<FloorSwitch>,
     val gates: List<IronGate>,
+    val ropes: List<HangingRope>,
+    val crushers: List<CrusherObj>,
     val hazards: List<HazardObj>
 )
 
@@ -54,7 +95,8 @@ object ChapterRepository {
             val sArr = obj.getJSONArray("solids")
             for (j in 0 until sArr.length()) {
                 val s = sArr.getJSONArray(j)
-                solids.add(SolidBlock(s.getDouble(0).toFloat(), s.getDouble(1).toFloat(), s.getDouble(2).toFloat(), s.getDouble(3).toFloat()))
+                val isCrumble = if (s.length() > 4) s.getInt(4) == 1 else false
+                solids.add(SolidBlock(s.getDouble(0).toFloat(), s.getDouble(1).toFloat(), s.getDouble(2).toFloat(), s.getDouble(3).toFloat(), isCrumble))
             }
 
             val crates = mutableListOf<PushCrate>()
@@ -77,6 +119,24 @@ object ChapterRepository {
                 val g = gArr.getJSONObject(j)
                 val h = g.getDouble("h").toFloat()
                 gates.add(IronGate(g.getDouble("x").toFloat(), g.getDouble("y").toFloat(), g.getDouble("w").toFloat(), h, h))
+            }
+
+            val ropes = mutableListOf<HangingRope>()
+            if (obj.has("ropes")) {
+                val rArr = obj.getJSONArray("ropes")
+                for (j in 0 until rArr.length()) {
+                    val r = rArr.getJSONObject(j)
+                    ropes.add(HangingRope(r.getDouble("ax").toFloat(), r.getDouble("ay").toFloat(), r.getDouble("len").toFloat()))
+                }
+            }
+
+            val crushers = mutableListOf<CrusherObj>()
+            if (obj.has("crushers")) {
+                val cuArr = obj.getJSONArray("crushers")
+                for (j in 0 until cuArr.length()) {
+                    val cu = cuArr.getJSONObject(j)
+                    crushers.add(CrusherObj(cu.getDouble("x").toFloat(), cu.getDouble("topY").toFloat(), cu.getDouble("w").toFloat(), cu.getDouble("drop").toFloat(), cu.getDouble("speed").toFloat(), cu.getDouble("phase").toFloat()))
+                }
             }
 
             val hazards = mutableListOf<HazardObj>()
@@ -106,6 +166,7 @@ object ChapterRepository {
                     skyBottom = android.graphics.Color.parseColor(obj.getString("skyBottom")),
                     fogAlpha = obj.getDouble("fogAlpha").toFloat(),
                     bgTheme = obj.getString("bgTheme"),
+                    windForce = if (obj.has("wind")) obj.getDouble("wind").toFloat() else 0f,
                     audioTrack = obj.getString("audioTrack"),
                     spawnX = spawn.getDouble(0).toFloat(),
                     spawnY = spawn.getDouble(1).toFloat(),
@@ -116,6 +177,8 @@ object ChapterRepository {
                     crates = crates,
                     switches = switches,
                     gates = gates,
+                    ropes = ropes,
+                    crushers = crushers,
                     hazards = hazards
                 )
             )

@@ -2,125 +2,122 @@
   "chapters": [
     {
       "id": 1,
-      "title": "Chapter 1: Awakening in the Mist",
-      "subtitle": "Where am I? My sister Aria was right beside me before the crash...",
-      "skyTop": "#AEB5BF",
-      "skyBottom": "#4A5058",
-      "fogAlpha": 0.35,
-      "bgTheme": "forest_mist",
+      "title": "Chapter 1: Cliffside Vines",
+      "subtitle": "Use your hands (GRAB) to swing across deep mountain gorges and pull heavy crates.",
+      "skyTop": "#B8C0CA",
+      "skyBottom": "#484E57",
+      "fogAlpha": 0.34,
+      "bgTheme": "mountain_cliffs",
+      "wind": 0.0,
       "audioTrack": "audio/ch1_whispering_woods.wav",
       "spawn": [
         120,
-        460
+        440
       ],
       "goal": [
-        3400,
-        410
+        3650,
+        390
       ],
       "storyTriggers": [
         {
           "x": 150,
-          "text": "Cold fog... Silence everywhere. Aria? Are you out there?"
+          "text": "A bottomless mountain gorge... Grab the hanging vine to swing across!"
         },
         {
-          "x": 1150,
-          "text": "Her blue ribbon is caught on this dead branch. She walked this way."
+          "x": 1350,
+          "text": "Hold GRAB near a crate to pull it backward onto the switch."
         },
         {
-          "x": 2450,
-          "text": "The forest grows darker. Something is watching from the shadows."
+          "x": 2650,
+          "text": "Aria's footprints lead higher into the misty peaks."
         }
       ],
       "solids": [
         [
           -200,
-          540,
-          1100,
-          350
-        ],
-        [
-          1060,
-          540,
+          520,
           820,
-          350
+          380,
+          0
         ],
         [
-          2050,
-          490,
-          750,
-          400
+          1020,
+          520,
+          960,
+          380,
+          0
         ],
         [
-          2950,
-          540,
+          2180,
+          470,
+          680,
+          430,
+          0
+        ],
+        [
+          3080,
+          520,
           850,
-          350
-        ],
-        [
-          620,
-          410,
-          200,
-          26
+          380,
+          0
         ],
         [
           1420,
-          390,
-          240,
-          26
-        ],
-        [
-          2320,
-          350,
-          220,
-          26
+          370,
+          230,
+          24,
+          0
         ]
       ],
       "crates": [
         [
-          510,
-          460,
-          72,
-          72
+          1260,
+          440,
+          74,
+          74
         ],
         [
-          1300,
-          460,
-          75,
-          75
+          2480,
+          390,
+          74,
+          74
         ]
       ],
       "switches": [
         {
-          "x": 1510,
-          "y": 376,
-          "w": 44,
+          "x": 1120,
+          "y": 506,
+          "w": 48,
           "h": 14,
           "gateIndex": 0
         }
       ],
       "gates": [
         {
-          "x": 1820,
-          "y": 360,
+          "x": 1860,
+          "y": 340,
           "w": 28,
           "h": 180
         }
       ],
-      "hazards": [
+      "ropes": [
         {
-          "x": 760,
-          "y": 514,
-          "w": 46,
-          "h": 26,
-          "type": "trap",
-          "vx": 0,
-          "minX": 0,
-          "maxX": 0
+          "ax": 820,
+          "ay": 90,
+          "len": 320
         },
         {
-          "x": 2180,
-          "y": 464,
-          "w": 48,
+          "ax": 2960,
+          "ay": 80,
+          "len": 330
+        }
+      ],
+      "crushers": [],
+      "hazards": [
+        {
+          "x": 1580,
+          "y": 494,
+          "w": 46,
           "h": 26,
           "type": "trap",
           "vx": 0,
@@ -131,123 +128,137 @@
     },
     {
       "id": 2,
-      "title": "Chapter 2: The Sunken Causeway",
-      "subtitle": "Old wooden bridges rot over black water. One wrong step is fatal.",
-      "skyTop": "#9BA4B0",
-      "skyBottom": "#3C424B",
+      "title": "Chapter 2: The Black Water Marsh",
+      "subtitle": "Dark water drowns instantly. Swing from ceiling ropes above the flooded abyss.",
+      "skyTop": "#9BA5B2",
+      "skyBottom": "#353C45",
       "fogAlpha": 0.42,
-      "bgTheme": "swamp_ruins",
+      "bgTheme": "black_water",
+      "wind": 0.0,
       "audioTrack": "audio/ch2_sunken_swamp.wav",
       "spawn": [
         120,
-        460
+        440
       ],
       "goal": [
-        3650,
-        410
+        3850,
+        390
       ],
       "storyTriggers": [
         {
-          "x": 200,
-          "text": "The old bridge collapsed years ago. Use the heavy crates to cross safely."
+          "x": 180,
+          "text": "The swamp water is pitch black and freezing. Do not fall in!"
         },
         {
-          "x": 1850,
-          "text": "Tiny footprints in the mud... Aria crossed this swamp alone."
+          "x": 1950,
+          "text": "Chain two rope swings together over the flooded ruins."
         }
       ],
       "solids": [
         [
           -200,
-          540,
-          950,
-          350
-        ],
-        [
-          920,
-          540,
-          680,
-          350
-        ],
-        [
-          1780,
-          500,
-          840,
-          390
-        ],
-        [
-          2800,
-          540,
-          1100,
-          350
-        ],
-        [
-          1150,
+          520,
+          760,
           380,
-          210,
-          26
+          0
         ],
         [
-          2150,
-          360,
-          240,
-          26
+          980,
+          520,
+          620,
+          380,
+          0
+        ],
+        [
+          2250,
+          520,
+          720,
+          380,
+          0
+        ],
+        [
+          3220,
+          520,
+          900,
+          380,
+          0
         ]
       ],
       "crates": [
         [
-          620,
-          460,
+          1150,
+          440,
           74,
           74
-        ],
-        [
-          1060,
-          460,
-          74,
-          74
-        ],
-        [
-          2020,
-          420,
-          76,
-          76
         ]
       ],
       "switches": [
         {
-          "x": 2230,
-          "y": 346,
-          "w": 44,
+          "x": 1040,
+          "y": 506,
+          "w": 48,
           "h": 14,
           "gateIndex": 0
         }
       ],
       "gates": [
         {
-          "x": 2560,
-          "y": 320,
+          "x": 1520,
+          "y": 340,
           "w": 28,
           "h": 180
         }
       ],
-      "hazards": [
+      "ropes": [
         {
-          "x": 1360,
-          "y": 480,
-          "w": 64,
-          "h": 64,
-          "type": "saw",
-          "vx": 150,
-          "minX": 1220,
-          "maxX": 1540
+          "ax": 760,
+          "ay": 85,
+          "len": 330
         },
         {
-          "x": 3020,
-          "y": 514,
-          "w": 48,
-          "h": 26,
-          "type": "trap",
+          "ax": 1780,
+          "ay": 80,
+          "len": 330
+        },
+        {
+          "ax": 2080,
+          "ay": 80,
+          "len": 330
+        },
+        {
+          "ax": 3090,
+          "ay": 90,
+          "len": 325
+        }
+      ],
+      "crushers": [],
+      "hazards": [
+        {
+          "x": 560,
+          "y": 545,
+          "w": 420,
+          "h": 180,
+          "type": "water",
+          "vx": 0,
+          "minX": 0,
+          "maxX": 0
+        },
+        {
+          "x": 1600,
+          "y": 545,
+          "w": 650,
+          "h": 180,
+          "type": "water",
+          "vx": 0,
+          "minX": 0,
+          "maxX": 0
+        },
+        {
+          "x": 2970,
+          "y": 545,
+          "w": 250,
+          "h": 180,
+          "type": "water",
           "vx": 0,
           "minX": 0,
           "maxX": 0
@@ -256,93 +267,80 @@
     },
     {
       "id": 3,
-      "title": "Chapter 3: Valley of Iron Traps",
-      "subtitle": "Hunters left rusted jaws hidden in the tall grass.",
-      "skyTop": "#8E96A2",
-      "skyBottom": "#323740",
-      "fogAlpha": 0.45,
-      "bgTheme": "hunter_valley",
+      "title": "Chapter 3: Cavern of the Shadow Spider",
+      "subtitle": "Deep inside the mountain cave, giant arachnid limbs strike from the ceiling.",
+      "skyTop": "#7F8792",
+      "skyBottom": "#252930",
+      "fogAlpha": 0.48,
+      "bgTheme": "mountain_cave",
+      "wind": 0.0,
       "audioTrack": "audio/ch3_iron_traps.wav",
       "spawn": [
         120,
-        460
+        440
       ],
       "goal": [
-        3800,
-        410
+        3950,
+        390
       ],
       "storyTriggers": [
         {
           "x": 180,
-          "text": "Iron bear traps... Whoever built this place didn't want anyone leaving."
+          "text": "Webs hang from the jagged cave ceiling... Something huge lives here."
         },
         {
-          "x": 2300,
-          "text": "Push the crate onto the pressure plate to unlock the iron gate."
+          "x": 2200,
+          "text": "Lure the spider's strike or sprint past when its leg retracts!"
         }
       ],
       "solids": [
         [
           -200,
-          540,
-          1200,
-          350
-        ],
-        [
-          1180,
-          540,
-          950,
-          350
-        ],
-        [
-          2300,
-          540,
-          1750,
-          350
-        ],
-        [
-          700,
-          400,
-          220,
-          26
-        ],
-        [
-          1600,
-          390,
-          240,
-          26
-        ],
-        [
-          2850,
+          520,
+          1250,
           380,
-          250,
-          26
+          0
+        ],
+        [
+          1260,
+          520,
+          1150,
+          380,
+          0
+        ],
+        [
+          2620,
+          520,
+          1550,
+          380,
+          0
+        ],
+        [
+          720,
+          370,
+          220,
+          24,
+          0
         ]
       ],
       "crates": [
         [
-          450,
-          460,
+          520,
+          440,
           74,
           74
         ],
         [
-          1420,
-          460,
-          74,
-          74
-        ],
-        [
-          2480,
-          460,
+          2760,
+          440,
           76,
           76
         ]
       ],
       "switches": [
         {
-          "x": 2720,
-          "y": 526,
+          "x": 3180,
+          "y": 506,
           "w": 48,
           "h": 14,
           "gateIndex": 0
@@ -350,17 +348,47 @@
       ],
       "gates": [
         {
-          "x": 3250,
-          "y": 360,
+          "x": 3580,
+          "y": 340,
           "w": 30,
           "h": 180
         }
       ],
+      "ropes": [
+        {
+          "ax": 1150,
+          "ay": 80,
+          "len": 325
+        },
+        {
+          "ax": 2510,
+          "ay": 80,
+          "len": 325
+        }
+      ],
+      "crushers": [
+        {
+          "x": 1620,
+          "topY": 60,
+          "w": 42,
+          "drop": 445,
+          "speed": 2.6,
+          "phase": 0.0
+        },
+        {
+          "x": 1920,
+          "topY": 60,
+          "w": 42,
+          "drop": 445,
+          "speed": 2.6,
+          "phase": 1.6
+        }
+      ],
       "hazards": [
         {
-          "x": 640,
-          "y": 514,
-          "w": 46,
+          "x": 860,
+          "y": 494,
+          "w": 48,
           "h": 26,
           "type": "trap",
           "vx": 0,
@@ -368,274 +396,81 @@
           "maxX": 0
         },
         {
-          "x": 850,
-          "y": 514,
-          "w": 46,
+          "x": 2980,
+          "y": 494,
+          "w": 48,
           "h": 26,
           "type": "trap",
           "vx": 0,
           "minX": 0,
           "maxX": 0
-        },
-        {
-          "x": 1750,
-          "y": 480,
-          "w": 66,
-          "h": 66,
-          "type": "saw",
-          "vx": 180,
-          "minX": 1520,
-          "maxX": 2050
-        },
-        {
-          "x": 3420,
-          "y": 480,
-          "w": 68,
-          "h": 68,
-          "type": "saw",
-          "vx": 190,
-          "minX": 3320,
-          "maxX": 3680
         }
       ]
     },
     {
       "id": 4,
-      "title": "Chapter 4: The Abandoned Mill",
-      "subtitle": "Grinding gears and spinning blades still run without workers.",
-      "skyTop": "#828A96",
-      "skyBottom": "#2B3038",
-      "fogAlpha": 0.48,
+      "title": "Chapter 4: The Hydraulic Crusher Mill",
+      "subtitle": "Industrial pistons slam down with lethal force. Time every sprint and crate pull.",
+      "skyTop": "#767E8A",
+      "skyBottom": "#21252C",
+      "fogAlpha": 0.5,
       "bgTheme": "industrial_mill",
+      "wind": 0.0,
       "audioTrack": "audio/ch4_abandoned_mill.wav",
       "spawn": [
         120,
-        460
+        440
       ],
       "goal": [
-        3950,
-        410
-      ],
-      "storyTriggers": [
-        {
-          "x": 220,
-          "text": "An abandoned lumber mill... The sawblades never stopped spinning."
-        },
-        {
-          "x": 2600,
-          "text": "I hear Aria calling from beyond the factory wall! Hold on!"
-        }
-      ],
-      "solids": [
-        [
-          -200,
-          540,
-          1100,
-          350
-        ],
-        [
-          1080,
-          490,
-          900,
-          400
-        ],
-        [
-          2160,
-          540,
-          950,
-          350
-        ],
-        [
-          3280,
-          540,
-          950,
-          350
-        ],
-        [
-          620,
-          390,
-          220,
-          26
-        ],
-        [
-          1480,
-          350,
-          250,
-          26
-        ],
-        [
-          2520,
-          390,
-          240,
-          26
-        ]
-      ],
-      "crates": [
-        [
-          480,
-          460,
-          74,
-          74
-        ],
-        [
-          1320,
-          410,
-          74,
-          74
-        ],
-        [
-          2360,
-          460,
-          76,
-          76
-        ]
-      ],
-      "switches": [
-        {
-          "x": 2610,
-          "y": 376,
-          "w": 46,
-          "h": 14,
-          "gateIndex": 0
-        }
-      ],
-      "gates": [
-        {
-          "x": 2980,
-          "y": 360,
-          "w": 30,
-          "h": 180
-        }
-      ],
-      "hazards": [
-        {
-          "x": 760,
-          "y": 480,
-          "w": 66,
-          "h": 66,
-          "type": "saw",
-          "vx": 185,
-          "minX": 580,
-          "maxX": 860
-        },
-        {
-          "x": 1650,
-          "y": 430,
-          "w": 68,
-          "h": 68,
-          "type": "saw",
-          "vx": 210,
-          "minX": 1420,
-          "maxX": 1920
-        },
-        {
-          "x": 3500,
-          "y": 480,
-          "w": 70,
-          "h": 70,
-          "type": "saw",
-          "vx": 220,
-          "minX": 3350,
-          "maxX": 3820
-        }
-      ]
-    },
-    {
-      "id": 5,
-      "title": "Chapter 5: Rooftops of Despair",
-      "subtitle": "High above the flooded city, rain washes away all footprints.",
-      "skyTop": "#78808C",
-      "skyBottom": "#242830",
-      "fogAlpha": 0.5,
-      "bgTheme": "rainy_city",
-      "audioTrack": "audio/ch5_rainy_rooftops.wav",
-      "spawn": [
-        120,
-        420
-      ],
-      "goal": [
-        4050,
+        4100,
         390
       ],
       "storyTriggers": [
         {
-          "x": 180,
-          "text": "A sunken city drowned in endless rain. Watch your footing on the ledges."
+          "x": 200,
+          "text": "Massive steel crushers hammer the factory floor. Watch their rhythm!"
         },
         {
-          "x": 2800,
-          "text": "That silhouette on the far tower... Is that her?"
+          "x": 2550,
+          "text": "Pull the crate under the piston to jam its path or reach the high rope."
         }
       ],
       "solids": [
         [
           -200,
-          500,
-          920,
-          390
-        ],
-        [
-          900,
-          460,
-          720,
-          430
-        ],
-        [
-          1800,
           520,
-          820,
-          370
-        ],
-        [
-          2800,
-          480,
-          680,
-          410
-        ],
-        [
-          3650,
-          520,
-          700,
-          370
-        ],
-        [
-          1150,
-          330,
-          210,
-          26
-        ],
-        [
-          2120,
+          1450,
           380,
-          230,
-          26
+          0
+        ],
+        [
+          1460,
+          520,
+          1200,
+          380,
+          0
+        ],
+        [
+          2880,
+          520,
+          1450,
+          380,
+          0
         ]
       ],
       "crates": [
         [
-          460,
-          420,
-          74,
-          74
-        ],
-        [
-          1960,
+          1680,
           440,
-          74,
-          74
-        ],
-        [
-          2950,
-          400,
           76,
           76
         ]
       ],
       "switches": [
         {
-          "x": 2210,
-          "y": 366,
-          "w": 46,
+          "x": 2120,
+          "y": 506,
+          "w": 48,
           "h": 14,
           "gateIndex": 0
         }
@@ -648,422 +483,559 @@
           "h": 180
         }
       ],
-      "hazards": [
+      "ropes": [
         {
-          "x": 1340,
-          "y": 434,
-          "w": 48,
-          "h": 26,
-          "type": "trap",
-          "vx": 0,
-          "minX": 0,
-          "maxX": 0
+          "ax": 1350,
+          "ay": 75,
+          "len": 330
         },
         {
-          "x": 3180,
-          "y": 420,
+          "ax": 2770,
+          "ay": 75,
+          "len": 330
+        }
+      ],
+      "crushers": [
+        {
+          "x": 580,
+          "topY": 60,
+          "w": 85,
+          "drop": 445,
+          "speed": 2.8,
+          "phase": 0.0
+        },
+        {
+          "x": 820,
+          "topY": 60,
+          "w": 85,
+          "drop": 445,
+          "speed": 2.8,
+          "phase": 1.5
+        },
+        {
+          "x": 1060,
+          "topY": 60,
+          "w": 85,
+          "drop": 445,
+          "speed": 2.8,
+          "phase": 3.0
+        },
+        {
+          "x": 3280,
+          "topY": 60,
+          "w": 95,
+          "drop": 445,
+          "speed": 3.2,
+          "phase": 0.7
+        }
+      ],
+      "hazards": [
+        {
+          "x": 3560,
+          "y": 455,
           "w": 68,
           "h": 68,
           "type": "saw",
-          "vx": 200,
-          "minX": 2920,
-          "maxX": 3420
+          "vx": 210,
+          "minX": 3420,
+          "maxX": 3880
+        }
+      ]
+    },
+    {
+      "id": 5,
+      "title": "Chapter 5: Gale Force Rooftops",
+      "subtitle": "Howling storm winds push you backward across rain-slicked towers.",
+      "skyTop": "#6F7885",
+      "skyBottom": "#1D2128",
+      "fogAlpha": 0.52,
+      "bgTheme": "rainy_city",
+      "wind": -78.0,
+      "audioTrack": "audio/ch5_rainy_rooftops.wav",
+      "spawn": [
+        120,
+        400
+      ],
+      "goal": [
+        4150,
+        370
+      ],
+      "storyTriggers": [
+        {
+          "x": 180,
+          "text": "The storm wind is fierce! Lean forward and jump with full momentum."
+        },
+        {
+          "x": 2650,
+          "text": "Grab the crane cables hanging over the flooded streets below."
+        }
+      ],
+      "solids": [
+        [
+          -200,
+          480,
+          920,
+          420,
+          0
+        ],
+        [
+          940,
+          450,
+          820,
+          450,
+          0
+        ],
+        [
+          2020,
+          500,
+          860,
+          400,
+          0
+        ],
+        [
+          3140,
+          470,
+          1250,
+          430,
+          0
+        ]
+      ],
+      "crates": [
+        [
+          1160,
+          370,
+          74,
+          74
+        ],
+        [
+          3340,
+          390,
+          76,
+          76
+        ]
+      ],
+      "switches": [
+        {
+          "x": 3680,
+          "y": 456,
+          "w": 48,
+          "h": 14,
+          "gateIndex": 0
+        }
+      ],
+      "gates": [
+        {
+          "x": 3940,
+          "y": 290,
+          "w": 30,
+          "h": 180
+        }
+      ],
+      "ropes": [
+        {
+          "ax": 830,
+          "ay": 60,
+          "len": 300
+        },
+        {
+          "ax": 1890,
+          "ay": 65,
+          "len": 320
+        },
+        {
+          "ax": 3010,
+          "ay": 65,
+          "len": 315
+        }
+      ],
+      "crushers": [],
+      "hazards": [
+        {
+          "x": 2360,
+          "y": 436,
+          "w": 66,
+          "h": 66,
+          "type": "saw",
+          "vx": 195,
+          "minX": 2180,
+          "maxX": 2680
         }
       ]
     },
     {
       "id": 6,
-      "title": "Chapter 6: The Clockwork Core",
-      "subtitle": "Deep underground, massive pistons and saws guard the inner sanctum.",
-      "skyTop": "#6B727E",
-      "skyBottom": "#1D2027",
-      "fogAlpha": 0.52,
-      "bgTheme": "clockwork_core",
+      "title": "Chapter 6: Crumbling Sky Bridges",
+      "subtitle": "Ancient stone bridges collapse seconds after your feet touch them.",
+      "skyTop": "#848C98",
+      "skyBottom": "#23272F",
+      "fogAlpha": 0.46,
+      "bgTheme": "mountain_cliffs",
+      "wind": 0.0,
       "audioTrack": "audio/ch6_clockwork_core.wav",
       "spawn": [
         120,
-        460
+        440
       ],
       "goal": [
-        4200,
-        410
-      ],
-      "storyTriggers": [
-        {
-          "x": 200,
-          "text": "The air smells of oil and rust. Every mechanism here is synchronized."
-        },
-        {
-          "x": 3100,
-          "text": "Two locks, one passage. Timing is everything."
-        }
-      ],
-      "solids": [
-        [
-          -200,
-          540,
-          1150,
-          350
-        ],
-        [
-          1120,
-          540,
-          1050,
-          350
-        ],
-        [
-          2350,
-          540,
-          1050,
-          350
-        ],
-        [
-          3580,
-          540,
-          900,
-          350
-        ],
-        [
-          640,
-          400,
-          220,
-          26
-        ],
-        [
-          1540,
-          390,
-          240,
-          26
-        ],
-        [
-          2740,
-          380,
-          250,
-          26
-        ]
-      ],
-      "crates": [
-        [
-          480,
-          460,
-          74,
-          74
-        ],
-        [
-          1380,
-          460,
-          74,
-          74
-        ],
-        [
-          2520,
-          460,
-          76,
-          76
-        ]
-      ],
-      "switches": [
-        {
-          "x": 1640,
-          "y": 376,
-          "w": 46,
-          "h": 14,
-          "gateIndex": 0
-        },
-        {
-          "x": 2840,
-          "y": 366,
-          "w": 46,
-          "h": 14,
-          "gateIndex": 1
-        }
-      ],
-      "gates": [
-        {
-          "x": 2060,
-          "y": 360,
-          "w": 30,
-          "h": 180
-        },
-        {
-          "x": 3280,
-          "y": 360,
-          "w": 30,
-          "h": 180
-        }
-      ],
-      "hazards": [
-        {
-          "x": 820,
-          "y": 480,
-          "w": 68,
-          "h": 68,
-          "type": "saw",
-          "vx": 210,
-          "minX": 620,
-          "maxX": 920
-        },
-        {
-          "x": 1820,
-          "y": 514,
-          "w": 48,
-          "h": 26,
-          "type": "trap",
-          "vx": 0,
-          "minX": 0,
-          "maxX": 0
-        },
-        {
-          "x": 3820,
-          "y": 480,
-          "w": 72,
-          "h": 72,
-          "type": "saw",
-          "vx": 235,
-          "minX": 3660,
-          "maxX": 4080
-        }
-      ]
-    },
-    {
-      "id": 7,
-      "title": "Chapter 7: Edge of Purgatory",
-      "subtitle": "Reality fractures as you near the boundary between life and memory.",
-      "skyTop": "#8E949E",
-      "skyBottom": "#1A1C22",
-      "fogAlpha": 0.55,
-      "bgTheme": "purgatory_edge",
-      "audioTrack": "audio/ch7_purgatory_edge.wav",
-      "spawn": [
-        120,
-        460
-      ],
-      "goal": [
-        4350,
-        410
-      ],
-      "storyTriggers": [
-        {
-          "x": 220,
-          "text": "The trees are turning into glass and shadow... I am almost at the edge."
-        },
-        {
-          "x": 3200,
-          "text": "I can see the light ahead. Aria is waiting beneath the white tree."
-        }
-      ],
-      "solids": [
-        [
-          -200,
-          540,
-          1050,
-          350
-        ],
-        [
-          1020,
-          490,
-          950,
-          400
-        ],
-        [
-          2150,
-          540,
-          1050,
-          350
-        ],
-        [
-          3380,
-          540,
-          1250,
-          350
-        ],
-        [
-          620,
-          390,
-          210,
-          26
-        ],
-        [
-          1440,
-          350,
-          240,
-          26
-        ],
-        [
-          2560,
-          390,
-          250,
-          26
-        ]
-      ],
-      "crates": [
-        [
-          450,
-          460,
-          74,
-          74
-        ],
-        [
-          1280,
-          410,
-          74,
-          74
-        ],
-        [
-          2380,
-          460,
-          76,
-          76
-        ],
-        [
-          3550,
-          460,
-          76,
-          76
-        ]
-      ],
-      "switches": [
-        {
-          "x": 2660,
-          "y": 376,
-          "w": 46,
-          "h": 14,
-          "gateIndex": 0
-        }
-      ],
-      "gates": [
-        {
-          "x": 3080,
-          "y": 360,
-          "w": 30,
-          "h": 180
-        }
-      ],
-      "hazards": [
-        {
-          "x": 760,
-          "y": 514,
-          "w": 48,
-          "h": 26,
-          "type": "trap",
-          "vx": 0,
-          "minX": 0,
-          "maxX": 0
-        },
-        {
-          "x": 1680,
-          "y": 430,
-          "w": 70,
-          "h": 70,
-          "type": "saw",
-          "vx": 225,
-          "minX": 1420,
-          "maxX": 1920
-        },
-        {
-          "x": 3820,
-          "y": 480,
-          "w": 72,
-          "h": 72,
-          "type": "saw",
-          "vx": 240,
-          "minX": 3660,
-          "maxX": 4180
-        }
-      ]
-    },
-    {
-      "id": 8,
-      "title": "Chapter 8: Reunion in the White Clearing",
-      "subtitle": "Every step through the darkness led to this final quiet clearing.",
-      "skyTop": "#D6DCE5",
-      "skyBottom": "#7A828E",
-      "fogAlpha": 0.25,
-      "bgTheme": "white_clearing",
-      "audioTrack": "audio/ch8_reunion_finale.wav",
-      "spawn": [
-        120,
-        460
-      ],
-      "goal": [
-        3200,
-        410
+        4250,
+        390
       ],
       "storyTriggers": [
         {
           "x": 180,
-          "text": "The storm has stopped. Warm light breaks through the mist."
+          "text": "Cracked stone bridges! Keep running\u2014they crumble beneath your feet!"
         },
         {
-          "x": 1500,
-          "text": "One last obstacle between us..."
-        },
-        {
-          "x": 2850,
-          "text": "Aria! You're safe... We finally found our way out of Limbo."
+          "x": 2500,
+          "text": "Leap from the collapsing ledge onto the hanging rope!"
         }
       ],
       "solids": [
         [
           -200,
-          540,
-          1400,
-          350
+          520,
+          680,
+          380,
+          0
         ],
         [
-          1380,
-          540,
-          2100,
-          350
+          560,
+          520,
+          220,
+          28,
+          1
         ],
         [
           860,
-          400,
-          240,
-          26
+          500,
+          220,
+          28,
+          1
         ],
         [
-          1960,
-          390,
-          250,
-          26
+          1160,
+          480,
+          220,
+          28,
+          1
+        ],
+        [
+          1480,
+          520,
+          880,
+          380,
+          0
+        ],
+        [
+          2460,
+          520,
+          240,
+          28,
+          1
+        ],
+        [
+          3020,
+          520,
+          1450,
+          380,
+          0
         ]
       ],
       "crates": [
         [
-          700,
-          460,
-          76,
-          76
+          1720,
+          440,
+          74,
+          74
         ],
         [
-          1780,
-          460,
+          3240,
+          440,
           76,
           76
         ]
       ],
       "switches": [
         {
-          "x": 2060,
-          "y": 376,
-          "w": 46,
+          "x": 3620,
+          "y": 506,
+          "w": 48,
           "h": 14,
           "gateIndex": 0
         }
       ],
       "gates": [
         {
-          "x": 2520,
-          "y": 360,
+          "x": 3980,
+          "y": 340,
           "w": 30,
           "h": 180
+        }
+      ],
+      "ropes": [
+        {
+          "ax": 2860,
+          "ay": 85,
+          "len": 325
+        }
+      ],
+      "crushers": [
+        {
+          "x": 2040,
+          "topY": 60,
+          "w": 75,
+          "drop": 445,
+          "speed": 3.0,
+          "phase": 0.0
         }
       ],
       "hazards": [
         {
           "x": 1620,
-          "y": 514,
+          "y": 494,
+          "w": 48,
+          "h": 26,
+          "type": "trap",
+          "vx": 0,
+          "minX": 0,
+          "maxX": 0
+        }
+      ]
+    },
+    {
+      "id": 7,
+      "title": "Chapter 7: The Abyssal Gauntlet",
+      "subtitle": "Water pits, crushers, crumbling stones, and ceiling ropes stand between you and the light.",
+      "skyTop": "#777F8B",
+      "skyBottom": "#1A1D24",
+      "fogAlpha": 0.52,
+      "bgTheme": "black_water",
+      "wind": -35.0,
+      "audioTrack": "audio/ch7_purgatory_edge.wav",
+      "spawn": [
+        120,
+        440
+      ],
+      "goal": [
+        4450,
+        390
+      ],
+      "storyTriggers": [
+        {
+          "x": 200,
+          "text": "Every trap in Limbo guards this final crossing. Stay sharp!"
+        },
+        {
+          "x": 3300,
+          "text": "I see the white clearing just beyond the last crusher!"
+        }
+      ],
+      "solids": [
+        [
+          -200,
+          520,
+          720,
+          380,
+          0
+        ],
+        [
+          1020,
+          520,
+          230,
+          28,
+          1
+        ],
+        [
+          1360,
+          520,
+          960,
+          380,
+          0
+        ],
+        [
+          2680,
+          520,
+          820,
+          380,
+          0
+        ],
+        [
+          3600,
+          520,
+          230,
+          28,
+          1
+        ],
+        [
+          3920,
+          520,
+          750,
+          380,
+          0
+        ]
+      ],
+      "crates": [
+        [
+          1560,
+          440,
+          74,
+          74
+        ]
+      ],
+      "switches": [
+        {
+          "x": 1920,
+          "y": 506,
+          "w": 48,
+          "h": 14,
+          "gateIndex": 0
+        }
+      ],
+      "gates": [
+        {
+          "x": 2220,
+          "y": 340,
+          "w": 30,
+          "h": 180
+        }
+      ],
+      "ropes": [
+        {
+          "ax": 780,
+          "ay": 80,
+          "len": 325
+        },
+        {
+          "ax": 2500,
+          "ay": 80,
+          "len": 325
+        }
+      ],
+      "crushers": [
+        {
+          "x": 2980,
+          "topY": 60,
+          "w": 85,
+          "drop": 445,
+          "speed": 3.3,
+          "phase": 0.4
+        }
+      ],
+      "hazards": [
+        {
+          "x": 520,
+          "y": 545,
+          "w": 840,
+          "h": 180,
+          "type": "water",
+          "vx": 0,
+          "minX": 0,
+          "maxX": 0
+        },
+        {
+          "x": 3220,
+          "y": 455,
+          "w": 68,
+          "h": 68,
+          "type": "saw",
+          "vx": 225,
+          "minX": 3080,
+          "maxX": 3440
+        }
+      ]
+    },
+    {
+      "id": 8,
+      "title": "Chapter 8: Reunion Beyond the Mist",
+      "subtitle": "One final rope swing across the sunlit chasm to reach your sister Aria.",
+      "skyTop": "#D8DEE8",
+      "skyBottom": "#7A828F",
+      "fogAlpha": 0.24,
+      "bgTheme": "white_clearing",
+      "wind": 0.0,
+      "audioTrack": "audio/ch8_reunion_finale.wav",
+      "spawn": [
+        120,
+        440
+      ],
+      "goal": [
+        3350,
+        390
+      ],
+      "storyTriggers": [
+        {
+          "x": 180,
+          "text": "The dark clouds part... Warm light shines on the ancient oak."
+        },
+        {
+          "x": 1750,
+          "text": "Swing across the final chasm\u2014Aria is waiting!"
+        },
+        {
+          "x": 2980,
+          "text": "Aria! I found you... We are together again."
+        }
+      ],
+      "solids": [
+        [
+          -200,
+          520,
+          1280,
+          380,
+          0
+        ],
+        [
+          1380,
+          520,
+          620,
+          380,
+          0
+        ],
+        [
+          2360,
+          520,
+          1250,
+          380,
+          0
+        ]
+      ],
+      "crates": [
+        [
+          620,
+          440,
+          76,
+          76
+        ]
+      ],
+      "switches": [
+        {
+          "x": 920,
+          "y": 506,
+          "w": 48,
+          "h": 14,
+          "gateIndex": 0
+        }
+      ],
+      "gates": [
+        {
+          "x": 1220,
+          "y": 340,
+          "w": 30,
+          "h": 180
+        }
+      ],
+      "ropes": [
+        {
+          "ax": 2180,
+          "ay": 85,
+          "len": 325
+        }
+      ],
+      "crushers": [],
+      "hazards": [
+        {
+          "x": 1640,
+          "y": 494,
           "w": 48,
           "h": 26,
           "type": "trap",

@@ -5,9 +5,7 @@ import android.graphics.*
 import android.view.MotionEvent
 import android.view.SurfaceHolder
 import android.view.SurfaceView
-import kotlin.math.abs
-import kotlin.math.cos
-import kotlin.math.sin
+import kotlin.math.*
 import kotlin.random.Random
 
 class LimboGameView(context: Context) : SurfaceView(context), SurfaceHolder.Callback, Runnable {
@@ -29,25 +27,34 @@ class LimboGameView(context: Context) : SurfaceView(context), SurfaceHolder.Call
     private val fgTreesBmp: Bitmap? = loadBitmap("art/parallax_fg_trees.png")
     private val titleArtBmp: Bitmap? = loadBitmap("art/title_cover.png")
 
+    // Player Physics State
     private var playerX = 120f
-    private var playerY = 460f
+    private var playerY = 440f
     private var playerVx = 0f
     private var playerVy = 0f
     private var onGround = false
     private var facingRight = true
     private var isPushing = false
+    private var isPulling = false
+    private var grabbingCrate: PushCrate? = null
+    private var attachedRope: HangingRope? = null
+    private var ropeCooldown = 0f
+    private var isHangingLedge = false
     private var animTime = 0f
     private var stepTimer = 0f
     private var cameraX = 0f
-    private var deathFlash = 0f
+    private var screenShake = 0f
 
+    // Story Banner State
     private var activeStoryText = ""
     private var storyTimer = 0f
     private var chapterBannerTimer = 0f
 
+    // Multi-Touch Controls: Left, Right, Grab/Hand, Jump
     private var btnLeft = false
     private var btnRight = false
     private var btnJump = false
+    private var btnGrab = false
 
     private val vW = 1280f
     private val vH = 720f
@@ -86,6 +93,10 @@ class LimboGameView(context: Context) : SurfaceView(context), SurfaceHolder.Call
         playerY = chapter.spawnY
         playerVx = 0f
         playerVy = 0f
+        attachedRope = null
+        grabbingCrate = null
+        isHangingLedge = false
+        ropeCooldown = 0f
         cameraX = (playerX - 360f).coerceAtLeast(-100f)
         chapterBannerTimer = 4.0f
         activeStoryText = chapter.subtitle
@@ -114,18 +125,32 @@ class LimboGameView(context: Context) : SurfaceView(context), SurfaceHolder.Call
 
     override fun run() {
         var lastTime = System.nanoTime()
+        val fixedDt = 1f / 60f
+        var accumulator = 0f
+
         while (running) {
             val now = System.nanoTime()
-            val dt = ((now - lastTime) / 1_000_000_000f).coerceIn(0.001f, 0.033f)
+            val frameDt = ((now - lastTime) / 1_000_000_000f).coerceIn(0f, 0.05f)
             lastTime = now
+            accumulator += frameDt
 
-            if (state == GameState.PLAYING) updateGame(dt) else animTime += dt
+            while (accumulator >= fixedDt) {
+                if (state == GameState.PLAYING) {
+                    updatePhysicsStep(fixedDt)
+                } else {
+                    animTime += fixedDt
+                }
+                accumulator -= fixedDt
+            }
 
             val canvas = holder.lockCanvas()
             if (canvas != null) {
                 try {
                     canvas.save()
                     canvas.scale(width / vW, height / vH)
+                    if (screenShake > 0f) {
+                        canvas.translate((Random.nextFloat() - 0.5f) * screenShake * 14f, (Random.nextFloat() - 0.5f) * screenShake * 14f)
+                    }
                     renderScene(canvas)
                     canvas.restore()
                 } finally {
@@ -135,55 +160,197 @@ class LimboGameView(context: Context) : SurfaceView(context), SurfaceHolder.Call
         }
     }
 
-    private fun updateGame(dt: Float) {
+    private fun updatePhysicsStep(dt: Float) {
         animTime += dt
         if (chapterBannerTimer > 0f) chapterBannerTimer -= dt
         if (storyTimer > 0f) storyTimer -= dt
-        if (deathFlash > 0f) deathFlash = (deathFlash - dt * 2.5f).coerceAtLeast(0f)
+        if (ropeCooldown > 0f) ropeCooldown -= dt
+        if (screenShake > 0f) screenShake = (screenShake - dt * 3f).coerceAtLeast(0f)
 
-        val moveSpeed = 295f
-        playerVx = when {
-            btnLeft -> { facingRight = false; -moveSpeed }
-            btnRight -> { facingRight = true; moveSpeed }
-            else -> 0f
+        // Update Pendulum Ropes Physics
+        for (r in chapter.ropes) {
+            val gravityAng = -(9.8f / (r.length * 0.015f)) * sin(r.angle)
+            r.angVel += gravityAng * dt
+            r.angVel *= 0.994f
+            if (attachedRope === r) {
+                if (btnLeft) r.angVel -= 2.4f * dt
+                if (btnRight) r.angVel += 2.4f * dt
+            }
+            r.angle += r.angVel * dt
         }
 
-        if (btnJump && onGround) {
+        // Update Hydraulic Crushers
+        for (cu in chapter.crushers) {
+            val prevDrop = cu.currentDrop
+            val wave = sin(animTime * cu.speed + cu.phase)
+            // Fast slam down, slow retract up
+            val norm = ((wave + 1f) * 0.5f).pow(2.4f)
+            cu.currentDrop = norm * cu.maxDrop
+            if (prevDrop < cu.maxDrop * 0.92f && cu.currentDrop >= cu.maxDrop * 0.92f) {
+                if (abs(cu.x - playerX) < 650f) {
+                    screenShake = 0.65f
+                    soundManager.playSwitch()
+                }
+            }
+            // Check crusher kill
+            if (overlaps(playerX + 5f, playerY + 4f, 24f, 60f, cu.x + 4f, cu.topY, cu.w - 8f, cu.currentDrop)) {
+                triggerDeath()
+                return
+            }
+        }
+
+        // Update Crumbling Stone Bridges
+        for (s in chapter.solids) {
+            if (s.crumbling && s.crumbleTimer > 0f) {
+                s.crumbleTimer += dt
+                if (s.crumbleTimer > 0.45f) {
+                    s.fallenOffsetY += 420f * dt
+                }
+            }
+        }
+
+        // --- CASE A: PLAYER HANGING & SWINGING ON A CEILING ROPE ---
+        val rope = attachedRope
+        if (rope != null) {
+            val bobX = rope.anchorX + sin(rope.angle) * (rope.length - 15f)
+            val bobY = rope.anchorY + cos(rope.angle) * (rope.length - 15f)
+            playerX = bobX - 17f
+            playerY = bobY - 12f
+            playerVx = cos(rope.angle) * rope.angVel * rope.length
+            playerVy = -sin(rope.angle) * rope.angVel * rope.length
+            if (btnLeft) facingRight = false
+            if (btnRight) facingRight = true
+
+            // Jump off rope with swing momentum!
+            if (btnJump || !btnGrab) {
+                attachedRope = null
+                ropeCooldown = 0.35f
+                if (btnJump) {
+                    playerVy = -590f
+                    playerVx = (cos(rope.angle) * rope.angVel * rope.length * 1.25f).coerceIn(-460f, 460f)
+                    soundManager.playJump()
+                }
+            }
+            updateCameraAndTriggers(dt)
+            return
+        }
+
+        // --- CASE B: PLAYER HANGING ON A MOUNTAIN LEDGE ---
+        if (isHangingLedge) {
+            playerVx = 0f
+            playerVy = 0f
+            if (btnJump) {
+                isHangingLedge = false
+                playerVy = -560f
+                playerX += if (facingRight) 14f else -14f
+                soundManager.playJump()
+            } else if (!btnGrab) {
+                isHangingLedge = false
+            }
+            updateCameraAndTriggers(dt)
+            return
+        }
+
+        // --- CASE C: NORMAL GROUND / AIR MOVEMENT & HAND CRATE GRABBING ---
+        val moveSpeed = if (grabbingCrate != null) 165f else 295f
+        val windPush = if (onGround) chapter.windForce * 0.45f else chapter.windForce * 0.85f
+
+        playerVx = when {
+            btnLeft -> {
+                if (grabbingCrate == null) facingRight = false
+                -moveSpeed + windPush
+            }
+            btnRight -> {
+                if (grabbingCrate == null) facingRight = true
+                moveSpeed + windPush
+            }
+            else -> windPush
+        }
+
+        if (btnJump && onGround && grabbingCrate == null) {
             playerVy = -645f
             onGround = false
             soundManager.playJump()
         }
 
+        // Check if player presses GRAB to catch a nearby hanging rope!
+        if (btnGrab && ropeCooldown <= 0f) {
+            for (r in chapter.ropes) {
+                val tipX = r.anchorX + sin(r.angle) * r.length
+                val tipY = r.anchorY + cos(r.angle) * r.length
+                if (dist(playerX + 17f, playerY + 25f, tipX, tipY) < 72f) {
+                    attachedRope = r
+                    r.angVel += (playerVx / r.length) * 0.85f
+                    soundManager.playSwitch()
+                    return
+                }
+            }
+        }
+
+        // Handle Crate Grabbing (Pulling & Pushing with Hands)
+        if (btnGrab && onGround) {
+            if (grabbingCrate == null) {
+                for (c in chapter.crates) {
+                    val reachRight = facingRight && abs((playerX + 34f) - c.x) < 18f && abs(playerY - c.y) < 35f
+                    val reachLeft = !facingRight && abs(playerX - (c.x + c.w)) < 18f && abs(playerY - c.y) < 35f
+                    if (reachRight || reachLeft) {
+                        grabbingCrate = c
+                        soundManager.playSwitch()
+                        break
+                    }
+                }
+            }
+        } else {
+            grabbingCrate = null
+        }
+
         isPushing = false
-        playerVy += 1580f * dt
-        playerX += playerVx * dt
+        isPulling = false
+        val heldCrate = grabbingCrate
+        if (heldCrate != null) {
+            val dx = playerVx * dt
+            playerX += dx
+            heldCrate.x += dx
+            if ((facingRight && dx < -0.1f) || (!facingRight && dx > 0.1f)) {
+                isPulling = true
+            } else if (abs(dx) > 0.1f) {
+                isPushing = true
+            }
+        } else {
+            playerX += playerVx * dt
+        }
         resolveHorizontal()
 
+        playerVy += 1580f * dt
         playerY += playerVy * dt
         onGround = false
         resolveVertical()
 
-        if (onGround && abs(playerVx) > 10f) {
+        // Footsteps Audio
+        if (onGround && abs(playerVx - windPush) > 15f) {
             stepTimer += dt
-            if (stepTimer >= 0.30f) {
+            if (stepTimer >= (if (grabbingCrate != null) 0.42f else 0.29f)) {
                 stepTimer = 0f
                 soundManager.playStep()
             }
         }
 
+        // Update Pushable Crates Gravity & Floor
         for (c in chapter.crates) {
             c.vy += 1580f * dt
             c.x += c.vx * dt
             c.vx *= 0.80f
             c.y += c.vy * dt
             for (s in chapter.solids) {
-                if (overlaps(c.x, c.y, c.w, c.h, s.x, s.y, s.w, s.h) && c.vy > 0f) {
-                    c.y = s.y - c.h
+                val sy = s.y + s.fallenOffsetY
+                if (overlaps(c.x, c.y, c.w, c.h, s.x, sy, s.w, s.h) && c.vy > 0f) {
+                    c.y = sy - c.h
                     c.vy = 0f
                 }
             }
         }
 
+        // Check Pressure Switches & Gates
         for (sw in chapter.switches) {
             var active = overlaps(playerX, playerY, 34f, 68f, sw.x, sw.y - 6f, sw.w, sw.h + 6f)
             if (!active) {
@@ -203,28 +370,34 @@ class LimboGameView(context: Context) : SurfaceView(context), SurfaceHolder.Call
             }
         }
 
+        // Hazards (Sawblades, Traps, Deep Black Water)
         for (h in chapter.hazards) {
             if (h.type == "saw") {
                 h.x += h.vx * dt
                 if (h.x < h.minX || h.x > h.maxX) h.vx = -h.vx
             }
-            if (overlaps(playerX + 6f, playerY + 6f, 22f, 56f, h.x + 7f, h.y + 7f, h.w - 14f, h.h - 14f)) {
+            val pad = if (h.type == "water") 12f else 7f
+            if (overlaps(playerX + 6f, playerY + 6f, 22f, 56f, h.x + pad, h.y + pad, h.w - pad * 2f, h.h - pad)) {
                 triggerDeath()
                 return
-            }
-        }
-
-        for (cue in chapter.storyCues) {
-            if (!cue.triggered && abs(playerX - cue.x) < 95f) {
-                cue.triggered = true
-                activeStoryText = cue.text
-                storyTimer = 5.5f
             }
         }
 
         if (playerY > 820f) {
             triggerDeath()
             return
+        }
+
+        updateCameraAndTriggers(dt)
+    }
+
+    private fun updateCameraAndTriggers(dt: Float) {
+        for (cue in chapter.storyCues) {
+            if (!cue.triggered && abs(playerX - cue.x) < 95f) {
+                cue.triggered = true
+                activeStoryText = cue.text
+                storyTimer = 5.5f
+            }
         }
 
         if (overlaps(playerX, playerY, 34f, 68f, chapter.goalX, chapter.goalY, 70f, 130f)) {
@@ -239,7 +412,7 @@ class LimboGameView(context: Context) : SurfaceView(context), SurfaceHolder.Call
             return
         }
 
-        cameraX += ((playerX - 420f) - cameraX) * 6.5f * dt
+        cameraX += ((playerX - 420f) - cameraX) * 7.0f * dt
         if (cameraX < -120f) cameraX = -120f
     }
 
@@ -247,7 +420,17 @@ class LimboGameView(context: Context) : SurfaceView(context), SurfaceHolder.Call
         val pw = 34f
         val ph = 68f
         for (s in chapter.solids) {
-            if (overlaps(playerX, playerY, pw, ph, s.x, s.y, s.w, s.h)) {
+            val sy = s.y + s.fallenOffsetY
+            if (s.fallenOffsetY > 180f) continue
+            if (overlaps(playerX, playerY, pw, ph, s.x, sy, s.w, s.h)) {
+                // Ledge Grab Check: If player hits upper corner while holding GRAB in mid-air!
+                if (!onGround && btnGrab && abs((playerY + 12f) - sy) < 26f) {
+                    isHangingLedge = true
+                    playerY = sy - 6f
+                    playerX = if (playerVx > 0f) s.x - pw + 4f else s.x + s.w - 4f
+                    soundManager.playSwitch()
+                    return
+                }
                 if (playerVx > 0f) playerX = s.x - pw
                 else if (playerVx < 0f) playerX = s.x + s.w
             }
@@ -258,15 +441,17 @@ class LimboGameView(context: Context) : SurfaceView(context), SurfaceHolder.Call
                 else if (playerVx < 0f) playerX = g.x + g.w
             }
         }
-        for (c in chapter.crates) {
-            if (overlaps(playerX, playerY, pw, ph, c.x, c.y, c.w, c.h)) {
-                isPushing = true
-                if (playerVx > 0f) {
-                    c.vx = 175f
-                    playerX = c.x - pw
-                } else if (playerVx < 0f) {
-                    c.vx = -175f
-                    playerX = c.x + c.w
+        if (grabbingCrate == null) {
+            for (c in chapter.crates) {
+                if (overlaps(playerX, playerY, pw, ph, c.x, c.y, c.w, c.h)) {
+                    isPushing = true
+                    if (playerVx > 0f) {
+                        c.vx = 175f
+                        playerX = c.x - pw
+                    } else if (playerVx < 0f) {
+                        c.vx = -175f
+                        playerX = c.x + c.w
+                    }
                 }
             }
         }
@@ -276,13 +461,19 @@ class LimboGameView(context: Context) : SurfaceView(context), SurfaceHolder.Call
         val pw = 34f
         val ph = 68f
         for (s in chapter.solids) {
-            if (overlaps(playerX, playerY, pw, ph, s.x, s.y, s.w, s.h)) {
+            val sy = s.y + s.fallenOffsetY
+            if (s.fallenOffsetY > 180f) continue
+            if (overlaps(playerX, playerY, pw, ph, s.x, sy, s.w, s.h)) {
                 if (playerVy > 0f) {
-                    playerY = s.y - ph
+                    playerY = sy - ph
                     playerVy = 0f
                     onGround = true
+                    if (s.crumbling && s.crumbleTimer == 0f) {
+                        s.crumbleTimer = 0.01f
+                        screenShake = 0.35f
+                    }
                 } else if (playerVy < 0f) {
-                    playerY = s.y + s.h
+                    playerY = sy + s.h
                     playerVy = 0f
                 }
             }
@@ -299,7 +490,7 @@ class LimboGameView(context: Context) : SurfaceView(context), SurfaceHolder.Call
     }
 
     private fun triggerDeath() {
-        deathFlash = 1.0f
+        screenShake = 0.9f
         soundManager.playDeath()
         startChapter(currentChapterIdx)
     }
@@ -372,17 +563,49 @@ class LimboGameView(context: Context) : SurfaceView(context), SurfaceHolder.Call
         }
 
         paint.color = chapter.skyBottom
-        paint.alpha = 70
+        paint.alpha = 75
         canvas.drawRect(0f, 0f, vW, vH, paint)
         paint.alpha = 255
+
+        // Chapter-specific cave ceiling silhouette for Mountain Cave & Industrial Mill
+        if (chapter.bgTheme == "mountain_cave" || chapter.bgTheme == "industrial_mill") {
+            drawCeilingCanopy(canvas)
+        }
 
         drawTiledParallax(canvas, bgFarBmp, 0.14f, 220)
         drawTiledParallax(canvas, bgMidBmp, 0.36f, 245)
 
-        for (s in chapter.solids) {
-            drawOrganicTerrain(canvas, s.x - cameraX, s.y, s.w, s.h)
+        // Hanging Ceiling Ropes & Vines
+        for (r in chapter.ropes) {
+            val ax = r.anchorX - cameraX
+            val ay = r.anchorY
+            val tipX = ax + sin(r.angle) * r.length
+            val tipY = ay + cos(r.angle) * r.length
+            paint.color = Color.rgb(12, 14, 18)
+            paint.strokeWidth = 5f
+            canvas.drawLine(ax, ay, tipX, tipY, paint)
+            // Glowing grab knot indicator when player is near
+            val near = dist(playerX + 17f, playerY + 25f, r.anchorX + sin(r.angle) * r.length, tipY) < 85f
+            paint.color = if (near) Color.argb(210, 255, 255, 255) else Color.rgb(65, 72, 82)
+            canvas.drawCircle(tipX, tipY, if (near) 8f else 5f, paint)
         }
 
+        // Organic Terrain Platforms & Crumbling Stone Bridges
+        for (s in chapter.solids) {
+            drawOrganicTerrain(canvas, s.x - cameraX, s.y + s.fallenOffsetY, s.w, s.h, s.crumbling)
+        }
+
+        // Hydraulic Crushers
+        for (cu in chapter.crushers) {
+            val cx = cu.x - cameraX
+            paint.color = Color.rgb(10, 11, 14)
+            canvas.drawRect(cx + cu.w * 0.35f, cu.topY, cx + cu.w * 0.65f, cu.topY + cu.currentDrop, paint)
+            canvas.drawRect(cx, cu.topY + cu.currentDrop - 34f, cx + cu.w, cu.topY + cu.currentDrop, paint)
+            paint.color = Color.rgb(85, 92, 104)
+            canvas.drawRect(cx + 4f, cu.topY + cu.currentDrop - 6f, cx + cu.w - 4f, cu.topY + cu.currentDrop - 2f, paint)
+        }
+
+        // Switches & Gates
         for (sw in chapter.switches) {
             paint.color = if (sw.pressed) Color.WHITE else Color.rgb(110, 118, 128)
             val offset = if (sw.pressed) 6f else 0f
@@ -393,16 +616,17 @@ class LimboGameView(context: Context) : SurfaceView(context), SurfaceHolder.Call
                 val gx = g.x - cameraX
                 paint.color = Color.rgb(16, 18, 22)
                 canvas.drawRect(gx, g.y, gx + g.w, g.y + g.currentH, paint)
-                paint.color = Color.rgb(70, 76, 86)
+                paint.color = Color.rgb(75, 82, 92)
                 canvas.drawRect(gx + 3f, g.y, gx + 6f, g.y + g.currentH, paint)
             }
         }
 
+        // Wooden Physics Crates
         for (c in chapter.crates) {
             val cx = c.x - cameraX
             paint.color = Color.rgb(18, 20, 24)
             canvas.drawRect(cx, c.y, cx + c.w, c.y + c.h, paint)
-            paint.color = Color.rgb(68, 74, 84)
+            paint.color = if (grabbingCrate === c) Color.WHITE else Color.rgb(68, 74, 84)
             paint.style = Paint.Style.STROKE
             paint.strokeWidth = 3.5f
             canvas.drawRect(cx + 3f, c.y + 3f, cx + c.w - 3f, c.y + c.h - 3f, paint)
@@ -411,35 +635,53 @@ class LimboGameView(context: Context) : SurfaceView(context), SurfaceHolder.Call
             paint.style = Paint.Style.FILL
         }
 
+        // Hazards (Sawblades, Bear Traps, Black Water Abyss)
         for (h in chapter.hazards) {
             val hx = h.x - cameraX
-            if (h.type == "saw") {
-                canvas.save()
-                canvas.translate(hx + h.w / 2f, h.y + h.h / 2f)
-                canvas.rotate(animTime * 460f)
-                paint.color = Color.rgb(10, 11, 14)
-                canvas.drawCircle(0f, 0f, h.w * 0.44f, paint)
-                for (t in 0 until 14) {
-                    canvas.rotate(360f / 14f)
-                    canvas.drawRect(-3.5f, -h.w * 0.54f, 3.5f, -h.w * 0.34f, paint)
+            when (h.type) {
+                "saw" -> {
+                    canvas.save()
+                    canvas.translate(hx + h.w / 2f, h.y + h.h / 2f)
+                    canvas.rotate(animTime * 460f)
+                    paint.color = Color.rgb(10, 11, 14)
+                    canvas.drawCircle(0f, 0f, h.w * 0.44f, paint)
+                    for (t in 0 until 14) {
+                        canvas.rotate(360f / 14f)
+                        canvas.drawRect(-3.5f, -h.w * 0.54f, 3.5f, -h.w * 0.34f, paint)
+                    }
+                    paint.style = Paint.Style.STROKE
+                    paint.strokeWidth = 2f
+                    paint.color = Color.rgb(145, 152, 165)
+                    canvas.drawCircle(0f, 0f, h.w * 0.38f, paint)
+                    paint.style = Paint.Style.FILL
+                    canvas.drawCircle(0f, 0f, 6f, paint)
+                    canvas.restore()
                 }
-                paint.style = Paint.Style.STROKE
-                paint.strokeWidth = 2f
-                paint.color = Color.rgb(145, 152, 165)
-                canvas.drawCircle(0f, 0f, h.w * 0.38f, paint)
-                paint.style = Paint.Style.FILL
-                canvas.drawCircle(0f, 0f, 6f, paint)
-                canvas.restore()
-            } else {
-                paint.color = Color.rgb(8, 9, 12)
-                canvas.drawRect(hx, h.y + 15f, hx + h.w, h.y + h.h, paint)
-                for (tx in 0..3) {
-                    val bx = hx + 4f + tx * 10f
-                    canvas.drawRect(bx, h.y + 5f, bx + 5f, h.y + 16f, paint)
+                "water" -> {
+                    paint.color = Color.argb(235, 4, 6, 10)
+                    canvas.drawRect(hx, h.y, hx + h.w, h.y + h.h, paint)
+                    // Rippling water surface sheen
+                    paint.color = Color.argb(120, 180, 195, 210)
+                    paint.strokeWidth = 3f
+                    var wx = hx
+                    while (wx < hx + h.w - 16f) {
+                        val wy = h.y + sin(animTime * 4f + wx * 0.05f) * 3f
+                        canvas.drawLine(wx, wy, wx + 18f, wy, paint)
+                        wx += 22f
+                    }
+                }
+                else -> {
+                    paint.color = Color.rgb(8, 9, 12)
+                    canvas.drawRect(hx, h.y + 15f, hx + h.w, h.y + h.h, paint)
+                    for (tx in 0..3) {
+                        val bx = hx + 4f + tx * 10f
+                        canvas.drawRect(bx, h.y + 5f, bx + 5f, h.y + 16f, paint)
+                    }
                 }
             }
         }
 
+        // Goal Beacon & Sister Aria
         val gx = chapter.goalX - cameraX
         val pulse = 0.55f + 0.25f * sin(animTime * 4f)
         paint.shader = LinearGradient(gx, chapter.goalY - 120f, gx, chapter.goalY + 130f, Color.TRANSPARENT, Color.argb((pulse * 195).toInt(), 255, 255, 255), Shader.TileMode.CLAMP)
@@ -447,20 +689,25 @@ class LimboGameView(context: Context) : SurfaceView(context), SurfaceHolder.Call
         paint.shader = null
 
         if (currentChapterIdx == 7) {
-            drawLimboCharacter(canvas, gx + 25f, chapter.goalY + 62f, facingRight = false, swing = 0f, pushing = false, isSister = true)
+            drawLimboCharacter(canvas, gx + 25f, chapter.goalY + 62f, facingRight = false, swing = 0f, handsUp = false, isSister = true)
         }
 
+        // Proportional Limbo Boy Character (with Raised Arms when Hanging on Ropes/Ledges or Grabbing Crates!)
         val swing = if (abs(playerVx) > 10f && onGround) sin(animTime * 19f) * 9.5f else 0f
-        drawLimboCharacter(canvas, playerX - cameraX, playerY, facingRight, swing, isPushing, isSister = false)
+        val handsActive = (attachedRope != null || isHangingLedge || isPushing || isPulling)
+        drawLimboCharacter(canvas, playerX - cameraX, playerY, facingRight, swing, handsActive, isSister = false)
 
+        // Foreground Out-of-Focus Trees
         drawTiledParallax(canvas, fgTreesBmp, 1.35f, 235)
 
-        paint.color = Color.argb(120, 235, 240, 248)
+        // Dust / Storm Wind Streaks / Rain
+        paint.color = Color.argb(125, 235, 240, 248)
         for (i in dustParticles.indices step 3) {
-            dustParticles[i] = (dustParticles[i] - 0.8f + vW) % vW
+            val windShift = if (chapter.windForce < -20f) -14f else -0.8f
+            dustParticles[i] = (dustParticles[i] + windShift + vW) % vW
             dustParticles[i + 1] = (dustParticles[i + 1] + (if (chapter.bgTheme == "rainy_city") 14f else 0.4f)) % vH
-            if (chapter.bgTheme == "rainy_city") {
-                canvas.drawLine(dustParticles[i], dustParticles[i + 1], dustParticles[i] - 4f, dustParticles[i + 1] + 16f, paint)
+            if (chapter.bgTheme == "rainy_city" || chapter.windForce < -20f) {
+                canvas.drawLine(dustParticles[i], dustParticles[i + 1], dustParticles[i] - 12f, dustParticles[i + 1] + 8f, paint)
             } else {
                 canvas.drawCircle(dustParticles[i], dustParticles[i + 1], dustParticles[i + 2], paint)
             }
@@ -481,7 +728,7 @@ class LimboGameView(context: Context) : SurfaceView(context), SurfaceHolder.Call
         if (storyTimer > 0f && activeStoryText.isNotEmpty()) {
             val alpha = (storyTimer.coerceIn(0f, 1f) * 245).toInt()
             paint.color = Color.argb((alpha * 0.65f).toInt(), 6, 8, 12)
-            canvas.drawRoundRect(RectF(210f, 140f, vW - 210f, 198f), 14f, 14f, paint)
+            canvas.drawRoundRect(RectF(190f, 140f, vW - 190f, 198f), 14f, 14f, paint)
             textPaint.color = Color.argb(alpha, 245, 248, 255)
             textPaint.textAlign = Paint.Align.CENTER
             textPaint.textSize = 22f
@@ -491,9 +738,25 @@ class LimboGameView(context: Context) : SurfaceView(context), SurfaceHolder.Call
         drawGameplayControls(canvas)
     }
 
-    private fun drawOrganicTerrain(canvas: Canvas, x: Float, y: Float, w: Float, h: Float) {
-        if (x + w < -60f || x > vW + 60f) return
+    private fun drawCeilingCanopy(canvas: Canvas) {
         paint.color = Color.rgb(4, 5, 7)
+        terrainPath.reset()
+        terrainPath.moveTo(0f, 0f)
+        terrainPath.lineTo(vW, 0f)
+        var x = vW
+        while (x >= 0f) {
+            val worldX = x + cameraX * 0.8f
+            val stalactite = 75f + abs(sin(worldX * 0.015f)) * 75f + abs(cos(worldX * 0.043f)) * 35f
+            terrainPath.lineTo(x, stalactite)
+            x -= 35f
+        }
+        terrainPath.close()
+        canvas.drawPath(terrainPath, paint)
+    }
+
+    private fun drawOrganicTerrain(canvas: Canvas, x: Float, y: Float, w: Float, h: Float, crumbling: Boolean) {
+        if (x + w < -60f || x > vW + 60f) return
+        paint.color = if (crumbling) Color.rgb(24, 26, 32) else Color.rgb(4, 5, 7)
 
         terrainPath.reset()
         terrainPath.moveTo(x, y + h)
@@ -508,6 +771,15 @@ class LimboGameView(context: Context) : SurfaceView(context), SurfaceHolder.Call
         terrainPath.lineTo(x + w, y + h)
         terrainPath.close()
         canvas.drawPath(terrainPath, paint)
+
+        if (crumbling) {
+            // Visible fracture cracks on crumbling stone bridges
+            paint.color = Color.rgb(120, 128, 140)
+            paint.strokeWidth = 2f
+            canvas.drawLine(x + w * 0.3f, y + 2f, x + w * 0.38f, y + h - 4f, paint)
+            canvas.drawLine(x + w * 0.68f, y + 2f, x + w * 0.62f, y + h - 4f, paint)
+            return
+        }
 
         paint.strokeWidth = 2f
         var gx = x + 8f
@@ -528,8 +800,8 @@ class LimboGameView(context: Context) : SurfaceView(context), SurfaceHolder.Call
         }
     }
 
-    private fun drawLimboCharacter(canvas: Canvas, x: Float, y: Float, facingRight: Boolean, swing: Float, pushing: Boolean, isSister: Boolean) {
-        val lean = if (pushing) (if (facingRight) 5f else -5f) else (if (abs(playerVx) > 10f && !isSister) (if (facingRight) 2.5f else -2.5f) else 0f)
+    private fun drawLimboCharacter(canvas: Canvas, x: Float, y: Float, facingRight: Boolean, swing: Float, handsActive: Boolean, isSister: Boolean) {
+        val lean = if (isPushing) (if (facingRight) 5f else -5f) else if (isPulling) (if (facingRight) -5f else 5f) else 0f
         paint.color = Color.rgb(4, 5, 7)
 
         val hx = x + 17f + lean
@@ -542,17 +814,24 @@ class LimboGameView(context: Context) : SurfaceView(context), SurfaceHolder.Call
 
         canvas.drawRoundRect(RectF(x + 9f + lean * 0.6f, y + 25f, x + 25f + lean * 0.6f, y + 49f), 5f, 5f, paint)
 
+        // Articulated Arms (Raised up to ceiling rope/ledge OR reaching out to grab/pull crates!)
         paint.strokeWidth = 4.5f
-        if (pushing) {
-            val reachX = if (facingRight) x + 36f else x - 2f
+        if (attachedRope != null || isHangingLedge) {
+            canvas.drawLine(x + 14f, y + 28f, x + 17f, y - 4f, paint)
+            canvas.drawLine(x + 20f, y + 28f, x + 17f, y - 4f, paint)
+        } else if (handsActive) {
+            val reachX = if (facingRight) x + 37f else x - 3f
             canvas.drawLine(x + 17f + lean, y + 31f, reachX, y + 34f, paint)
         } else {
             canvas.drawLine(x + 17f + lean, y + 30f, x + 17f - swing * 0.6f, y + 46f, paint)
         }
 
-        canvas.drawLine(x + 13f, y + 48f, x + 11f + swing, y + 68f, paint)
-        canvas.drawLine(x + 21f, y + 48f, x + 23f - swing, y + 68f, paint)
+        // Articulated Legs
+        val legSpread = if (attachedRope != null) sin(animTime * 6f) * 6f else swing
+        canvas.drawLine(x + 13f, y + 48f, x + 11f + legSpread, y + 68f, paint)
+        canvas.drawLine(x + 21f, y + 48f, x + 23f - legSpread, y + 68f, paint)
 
+        // Glowing White Eyes
         val eyeX = if (facingRight) hx + 3f else hx - 8f
         paint.color = Color.argb(65, 255, 255, 255)
         canvas.drawCircle(eyeX + 2.5f, hy - 1f, 8f, paint)
@@ -564,25 +843,27 @@ class LimboGameView(context: Context) : SurfaceView(context), SurfaceHolder.Call
     private fun drawGameplayControls(canvas: Canvas) {
         drawControlCircle(canvas, 110f, 615f, 56f, "◀", btnLeft)
         drawControlCircle(canvas, 250f, 615f, 56f, "▶", btnRight)
+        // New Dedicated HAND / GRAB Button (For Rope Swinging, Crate Pulling & Ledge Grabbing!)
+        drawControlCircle(canvas, 1020f, 615f, 56f, "GRAB", btnGrab, smallText = true)
         drawControlCircle(canvas, 1165f, 610f, 64f, "▲", btnJump)
 
         drawMenuButton(canvas, 1150f, 28f, 95f, 46f, "II")
         drawMenuButton(canvas, 1035f, 28f, 95f, 46f, if (soundManager.isMuted) "MUTE" else "SFX")
     }
 
-    private fun drawControlCircle(canvas: Canvas, cx: Float, cy: Float, r: Float, symbol: String, active: Boolean) {
-        paint.color = if (active) Color.argb(120, 255, 255, 255) else Color.argb(40, 255, 255, 255)
+    private fun drawControlCircle(canvas: Canvas, cx: Float, cy: Float, r: Float, symbol: String, active: Boolean, smallText: Boolean = false) {
+        paint.color = if (active) Color.argb(135, 255, 255, 255) else Color.argb(42, 255, 255, 255)
         canvas.drawCircle(cx, cy, r, paint)
         paint.style = Paint.Style.STROKE
         paint.strokeWidth = 2.5f
-        paint.color = Color.argb(115, 255, 255, 255)
+        paint.color = Color.argb(120, 255, 255, 255)
         canvas.drawCircle(cx, cy, r, paint)
         paint.style = Paint.Style.FILL
 
-        textPaint.color = Color.argb(210, 255, 255, 255)
+        textPaint.color = Color.argb(220, 255, 255, 255)
         textPaint.textAlign = Paint.Align.CENTER
-        textPaint.textSize = 28f
-        canvas.drawText(symbol, cx, cy + 10f, textPaint)
+        textPaint.textSize = if (smallText) 20f else 28f
+        canvas.drawText(symbol, cx, cy + (if (smallText) 7f else 10f), textPaint)
     }
 
     private fun renderPauseOverlay(canvas: Canvas) {
@@ -652,6 +933,7 @@ class LimboGameView(context: Context) : SurfaceView(context), SurfaceHolder.Call
         var left = false
         var right = false
         var jump = false
+        var grab = false
 
         for (i in 0 until event.pointerCount) {
             val action = event.actionMasked
@@ -674,11 +956,13 @@ class LimboGameView(context: Context) : SurfaceView(context), SurfaceHolder.Call
 
             if (dist(tx, ty, 110f, 615f) <= 82f) left = true
             else if (dist(tx, ty, 250f, 615f) <= 82f) right = true
+            else if (dist(tx, ty, 1020f, 615f) <= 82f) grab = true
             else if (dist(tx, ty, 1165f, 610f) <= 92f) jump = true
         }
 
         btnLeft = left
         btnRight = right
+        btnGrab = grab
         btnJump = jump
         return true
     }
@@ -731,7 +1015,7 @@ class LimboGameView(context: Context) : SurfaceView(context), SurfaceHolder.Call
     private fun dist(x1: Float, y1: Float, x2: Float, y2: Float): Float {
         val dx = x1 - x2
         val dy = y1 - y2
-        return kotlin.math.sqrt(dx * dx + dy * dy)
+        return sqrt(dx * dx + dy * dy)
     }
 
     private fun overlaps(ax: Float, ay: Float, aw: Float, ah: Float, bx: Float, by: Float, bw: Float, bh: Float): Boolean {
