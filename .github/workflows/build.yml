@@ -1,4 +1,4 @@
-name: Build WYRIX Shadow Limbo Play Store AAB & APK
+name: Build WYRIX Shadow Limbo v2 Cinematic AAB & APK
 
 on:
   push:
@@ -23,11 +23,81 @@ jobs:
         with:
           gradle-version: '8.7'
 
-      - name: Synthesize 8 Distinct Original Chapter Soundtracks (48kHz Stereo WAV)
+      - name: Render Gaussian-Blurred 2.5D Parallax Art & 8 Stereo Soundtracks
         run: |
+          pip install --quiet pillow numpy
           python3 - << 'PY'
           import os, struct, math, random
+          import numpy as np
+          from PIL import Image, ImageDraw, ImageFilter
 
+          os.makedirs("app/src/main/assets/art", exist_ok=True)
+          os.makedirs("app/src/main/assets/audio", exist_ok=True)
+
+          W, H = 1920, 1080
+          # Far Mist Forest
+          far_img = Image.new("RGBA", (W, H), (0, 0, 0, 0))
+          draw = ImageDraw.Draw(far_img)
+          random.seed(42)
+          hill_pts = [(0, H)] + [(x, int(H * 0.58 + math.sin(x * 0.004) * 90 + math.cos(x * 0.011) * 45)) for x in range(0, W + 80, 80)] + [(W, H)]
+          draw.polygon(hill_pts, fill=(38, 42, 48, 175))
+          for i in range(28):
+              tx = int((i / 28.0) * W + random.randint(-25, 25))
+              tw = random.randint(18, 46)
+              lean = random.randint(-22, 22)
+              draw.polygon([(tx, H), (tx + tw, H), (tx + tw * 0.6 + lean, 0), (tx + lean, 0)], fill=(26, 29, 34, 195))
+              for b in range(4):
+                  by = random.randint(120, 750)
+                  blen = random.randint(60, 160) * (1 if b % 2 == 0 else -1)
+                  draw.line([(tx + tw // 2, by), (tx + tw // 2 + blen, by - random.randint(20, 65))], fill=(26, 29, 34, 180), width=random.randint(4, 10))
+          far_img.filter(ImageFilter.GaussianBlur(radius=9.5)).save("app/src/main/assets/art/parallax_far_woods.png")
+
+          # Mid Forest & Ridge
+          mid_img = Image.new("RGBA", (W, H), (0, 0, 0, 0))
+          draw_m = ImageDraw.Draw(mid_img)
+          random.seed(108)
+          ridge = [(0, H)] + [(x, int(H * 0.72 + math.sin(x * 0.006 + 1.2) * 65 + math.cos(x * 0.019) * 30)) for x in range(0, W + 60, 60)] + [(W, H)]
+          draw_m.polygon(ridge, fill=(18, 20, 24, 220))
+          for i in range(18):
+              tx = int((i / 18.0) * W + random.randint(-30, 30))
+              tw = random.randint(28, 65)
+              lean = random.randint(-30, 30)
+              draw_m.polygon([(tx, H), (tx + tw, H), (tx + tw * 0.7 + lean, 0), (tx + lean, 0)], fill=(14, 16, 20, 235))
+              for b in range(5):
+                  by = random.randint(80, 820)
+                  blen = random.randint(80, 210) * (1 if (i + b) % 2 == 0 else -1)
+                  draw_m.line([(tx + tw // 2, by), (tx + tw // 2 + blen, by - random.randint(25, 80))], fill=(14, 16, 20, 225), width=random.randint(6, 14))
+          mid_img.filter(ImageFilter.GaussianBlur(radius=3.8)).save("app/src/main/assets/art/parallax_mid_ruins.png")
+
+          # Foreground Out-of-Focus Trees
+          fg_img = Image.new("RGBA", (W, H), (0, 0, 0, 0))
+          draw_fg = ImageDraw.Draw(fg_img)
+          random.seed(777)
+          for tx in [180, 790, 1420]:
+              tw = random.randint(75, 115)
+              draw_fg.polygon([(tx, H), (tx + tw, H), (tx + tw - 18, 0), (tx - 18, 0)], fill=(3, 4, 6, 245))
+          canopy = [(0, 0), (W, 0)] + [(x, int(55 + math.sin(x * 0.015) * 35 + random.randint(0, 28))) for x in range(W, -40, -40)]
+          draw_fg.polygon(canopy, fill=(3, 4, 6, 245))
+          fg_img.filter(ImageFilter.GaussianBlur(radius=6.0)).save("app/src/main/assets/art/parallax_fg_trees.png")
+
+          # Anti-Banding Dithered Sky with God-Rays
+          sw, sh = 1280, 720
+          y_grid, x_grid = np.mgrid[0:sh, 0:sw].astype(np.float32)
+          dx = (x_grid - sw * 0.52) / (sw * 0.55)
+          dy = (y_grid - sh * 0.34) / (sh * 0.65)
+          dist = np.sqrt(dx * dx + dy * dy)
+          ray1 = np.exp(-((x_grid - y_grid * 0.45 - 320.0) ** 2) / (2.0 * 110.0 ** 2)) * 0.14
+          ray2 = np.exp(-((x_grid - y_grid * 0.45 - 640.0) ** 2) / (2.0 * 140.0 ** 2)) * 0.11
+          lum = np.clip(0.72 * np.exp(-dist * dist * 1.15) + ray1 + ray2 + 0.06, 0.04, 0.88)
+          np.random.seed(99)
+          dither = (np.random.rand(sh, sw) - 0.5) * (2.2 / 255.0)
+          grain = (np.random.rand(sh, sw) - 0.5) * 0.025
+          val = np.clip((lum + dither + grain) * 255.0, 0, 255).astype(np.uint8)
+          sky_rgb = np.stack([val, np.clip(val.astype(np.int16) + 2, 0, 255).astype(np.uint8), np.clip(val.astype(np.int16) + 5, 0, 255).astype(np.uint8)], axis=-1)
+          sky_img = Image.fromarray(sky_rgb, mode="RGB")
+          sky_img.save("app/src/main/assets/art/cinematic_sky_dithered.png")
+
+          # 8 Stereo Chapter Ambient Soundtracks (~118 MB)
           tracks = [
               ("ch1_whispering_woods.wav", 55.0, 82.4, 0.25),
               ("ch2_sunken_swamp.wav", 49.0, 73.4, 0.35),
@@ -38,45 +108,32 @@ jobs:
               ("ch7_purgatory_edge.wav", 51.9, 77.8, 0.28),
               ("ch8_reunion_finale.wav", 65.4, 98.0, 0.15),
           ]
-
-          sr = 48000
-          channels = 2
-          duration_sec = 78  # ~14.9 MB per track x 8 tracks = ~119 MB total authentic multi-chapter audio
+          sr, channels, duration_sec = 48000, 2, 78
           num_samples = sr * duration_sec
           data_size = num_samples * channels * 2
-
-          os.makedirs("app/src/main/assets/audio", exist_ok=True)
           for fname, f1, f2, wind_lvl in tracks:
               path = os.path.join("app/src/main/assets/audio", fname)
               with open(path, "wb") as f:
-                  f.write(b"RIFF")
-                  f.write(struct.pack("<I", 36 + data_size))
-                  f.write(b"WAVEfmt ")
+                  f.write(b"RIFF" + struct.pack("<I", 36 + data_size) + b"WAVEfmt ")
                   f.write(struct.pack("<IHHIIHH", 16, 1, channels, sr, sr * channels * 2, channels * 2, 16))
-                  f.write(b"data")
-                  f.write(struct.pack("<I", data_size))
-
+                  f.write(b"data" + struct.pack("<I", data_size))
                   buf = bytearray()
-                  lp_l = 0.0
-                  lp_r = 0.0
+                  lp_l = lp_r = 0.0
                   for i in range(num_samples):
                       t = i / sr
                       env = 0.65 + 0.35 * math.sin(2 * math.pi * 0.08 * t)
-                      w_l = random.uniform(-1.0, 1.0)
-                      w_r = random.uniform(-1.0, 1.0)
-                      lp_l = lp_l * 0.985 + w_l * 0.015
-                      lp_r = lp_r * 0.985 + w_r * 0.015
-                      drone_l = math.sin(2 * math.pi * f1 * t) * 0.35 + math.sin(2 * math.pi * (f2 * 1.5) * t) * 0.18
-                      drone_r = math.sin(2 * math.pi * (f1 * 1.004) * t) * 0.35 + math.sin(2 * math.pi * f2 * t) * 0.20
-                      sl = int(max(-1.0, min(1.0, (drone_l * env + lp_l * wind_lvl * 3.0))) * 14000)
-                      sr_val = int(max(-1.0, min(1.0, (drone_r * env + lp_r * wind_lvl * 3.0))) * 14000)
-                      buf.extend(struct.pack("<hh", sl, sr_val))
+                      lp_l = lp_l * 0.985 + random.uniform(-1.0, 1.0) * 0.015
+                      lp_r = lp_r * 0.985 + random.uniform(-1.0, 1.0) * 0.015
+                      dl = math.sin(2 * math.pi * f1 * t) * 0.35 + math.sin(2 * math.pi * (f2 * 1.5) * t) * 0.18
+                      dr = math.sin(2 * math.pi * (f1 * 1.004) * t) * 0.35 + math.sin(2 * math.pi * f2 * t) * 0.20
+                      sl = int(max(-1.0, min(1.0, (dl * env + lp_l * wind_lvl * 3.0))) * 14000)
+                      sr_v = int(max(-1.0, min(1.0, (dr * env + lp_r * wind_lvl * 3.0))) * 14000)
+                      buf.extend(struct.pack("<hh", sl, sr_v))
                       if len(buf) >= 1048576:
                           f.write(buf)
                           buf.clear()
                   if buf:
                       f.write(buf)
-              print("Built track:", fname, round(os.path.getsize(path)/(1024*1024), 2), "MB")
           PY
 
       - name: Build Play Store Bundle (.AAB) & Test APK
@@ -86,7 +143,7 @@ jobs:
       - name: Upload Play Store AAB & APK Artifacts
         uses: actions/upload-artifact@v4
         with:
-          name: WYRIX-ShadowLimbo-PlayStore-v1
+          name: WYRIX-ShadowLimbo-v2-Cinematic
           path: |
             app/build/outputs/bundle/release/*.aab
             app/build/outputs/apk/debug/*.apk

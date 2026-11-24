@@ -23,44 +23,45 @@ class LimboGameView(context: Context) : SurfaceView(context), SurfaceHolder.Call
     private var currentChapterIdx = 0
     private var chapter: ChapterSpec = ChapterRepository.loadAllChapters(context)[0]
 
-    // High-Res Hand-Crafted Art Bitmaps loaded from assets/art/
+    private val skyDitheredBmp: Bitmap? = loadBitmap("art/cinematic_sky_dithered.png")
     private val bgFarBmp: Bitmap? = loadBitmap("art/parallax_far_woods.png")
     private val bgMidBmp: Bitmap? = loadBitmap("art/parallax_mid_ruins.png")
+    private val fgTreesBmp: Bitmap? = loadBitmap("art/parallax_fg_trees.png")
     private val titleArtBmp: Bitmap? = loadBitmap("art/title_cover.png")
 
-    // Player State
     private var playerX = 120f
     private var playerY = 460f
     private var playerVx = 0f
     private var playerVy = 0f
     private var onGround = false
     private var facingRight = true
+    private var isPushing = false
     private var animTime = 0f
     private var stepTimer = 0f
     private var cameraX = 0f
     private var deathFlash = 0f
 
-    // Story Narrative Banner State
     private var activeStoryText = ""
     private var storyTimer = 0f
     private var chapterBannerTimer = 0f
 
-    // Touch Control Flags
     private var btnLeft = false
     private var btnRight = false
     private var btnJump = false
 
-    // Virtual Resolution (1280 x 720)
     private val vW = 1280f
     private val vH = 720f
 
-    // Reusable Paints
-    private val paint = Paint(Paint.ANTI_ALIAS_FLAG)
+    private val paint = Paint(Paint.ANTI_ALIAS_FLAG or Paint.DITHER_FLAG or Paint.FILTER_BITMAP_FLAG)
     private val textPaint = Paint(Paint.ANTI_ALIAS_FLAG)
+    private val terrainPath = Path()
 
-    // Rain Particles for Atmospheric Depth
-    private val rainDrops = FloatArray(160) { i ->
-        if (i % 2 == 0) Random.nextFloat() * vW else Random.nextFloat() * vH
+    private val dustParticles = FloatArray(180) { i ->
+        when (i % 3) {
+            0 -> Random.nextFloat() * vW
+            1 -> Random.nextFloat() * vH
+            else -> 1.2f + Random.nextFloat() * 2.5f
+        }
     }
 
     init {
@@ -85,23 +86,17 @@ class LimboGameView(context: Context) : SurfaceView(context), SurfaceHolder.Call
         playerY = chapter.spawnY
         playerVx = 0f
         playerVy = 0f
-        cameraX = (playerX - 350f).coerceAtLeast(-100f)
-        chapterBannerTimer = 4.2f
+        cameraX = (playerX - 360f).coerceAtLeast(-100f)
+        chapterBannerTimer = 4.0f
         activeStoryText = chapter.subtitle
         storyTimer = 5.5f
         soundManager.playChapterMusic(chapter.audioTrack)
         state = GameState.PLAYING
     }
 
-    override fun surfaceCreated(holder: SurfaceHolder) {
-        resume()
-    }
-
+    override fun surfaceCreated(holder: SurfaceHolder) { resume() }
     override fun surfaceChanged(holder: SurfaceHolder, format: Int, width: Int, height: Int) {}
-
-    override fun surfaceDestroyed(holder: SurfaceHolder) {
-        pause()
-    }
+    override fun surfaceDestroyed(holder: SurfaceHolder) { pause() }
 
     fun resume() {
         if (running) return
@@ -124,19 +119,13 @@ class LimboGameView(context: Context) : SurfaceView(context), SurfaceHolder.Call
             val dt = ((now - lastTime) / 1_000_000_000f).coerceIn(0.001f, 0.033f)
             lastTime = now
 
-            if (state == GameState.PLAYING) {
-                updateGame(dt)
-            } else {
-                animTime += dt
-            }
+            if (state == GameState.PLAYING) updateGame(dt) else animTime += dt
 
             val canvas = holder.lockCanvas()
             if (canvas != null) {
                 try {
-                    val scaleX = width / vW
-                    val scaleY = height / vH
                     canvas.save()
-                    canvas.scale(scaleX, scaleY)
+                    canvas.scale(width / vW, height / vH)
                     renderScene(canvas)
                     canvas.restore()
                 } finally {
@@ -152,7 +141,7 @@ class LimboGameView(context: Context) : SurfaceView(context), SurfaceHolder.Call
         if (storyTimer > 0f) storyTimer -= dt
         if (deathFlash > 0f) deathFlash = (deathFlash - dt * 2.5f).coerceAtLeast(0f)
 
-        val moveSpeed = 300f
+        val moveSpeed = 295f
         playerVx = when {
             btnLeft -> { facingRight = false; -moveSpeed }
             btnRight -> { facingRight = true; moveSpeed }
@@ -160,11 +149,12 @@ class LimboGameView(context: Context) : SurfaceView(context), SurfaceHolder.Call
         }
 
         if (btnJump && onGround) {
-            playerVy = -640f
+            playerVy = -645f
             onGround = false
             soundManager.playJump()
         }
 
+        isPushing = false
         playerVy += 1580f * dt
         playerX += playerVx * dt
         resolveHorizontal()
@@ -173,7 +163,6 @@ class LimboGameView(context: Context) : SurfaceView(context), SurfaceHolder.Call
         onGround = false
         resolveVertical()
 
-        // Footsteps Audio
         if (onGround && abs(playerVx) > 10f) {
             stepTimer += dt
             if (stepTimer >= 0.30f) {
@@ -182,11 +171,10 @@ class LimboGameView(context: Context) : SurfaceView(context), SurfaceHolder.Call
             }
         }
 
-        // Update Pushable Crates
         for (c in chapter.crates) {
             c.vy += 1580f * dt
             c.x += c.vx * dt
-            c.vx *= 0.82f
+            c.vx *= 0.80f
             c.y += c.vy * dt
             for (s in chapter.solids) {
                 if (overlaps(c.x, c.y, c.w, c.h, s.x, s.y, s.w, s.h) && c.vy > 0f) {
@@ -196,7 +184,6 @@ class LimboGameView(context: Context) : SurfaceView(context), SurfaceHolder.Call
             }
         }
 
-        // Check Pressure Switches & Gates
         for (sw in chapter.switches) {
             var active = overlaps(playerX, playerY, 34f, 68f, sw.x, sw.y - 6f, sw.w, sw.h + 6f)
             if (!active) {
@@ -207,9 +194,7 @@ class LimboGameView(context: Context) : SurfaceView(context), SurfaceHolder.Call
                     }
                 }
             }
-            if (active && !sw.pressed) {
-                soundManager.playSwitch()
-            }
+            if (active && !sw.pressed) soundManager.playSwitch()
             sw.pressed = active
             if (sw.gateIndex in chapter.gates.indices) {
                 val gate = chapter.gates[sw.gateIndex]
@@ -218,34 +203,30 @@ class LimboGameView(context: Context) : SurfaceView(context), SurfaceHolder.Call
             }
         }
 
-        // Update Moving Sawblades & Hazards
         for (h in chapter.hazards) {
             if (h.type == "saw") {
                 h.x += h.vx * dt
                 if (h.x < h.minX || h.x > h.maxX) h.vx = -h.vx
             }
-            if (overlaps(playerX + 5f, playerY + 5f, 24f, 58f, h.x + 6f, h.y + 6f, h.w - 12f, h.h - 12f)) {
+            if (overlaps(playerX + 6f, playerY + 6f, 22f, 56f, h.x + 7f, h.y + 7f, h.w - 14f, h.h - 14f)) {
                 triggerDeath()
                 return
             }
         }
 
-        // Story Narrative Triggers
         for (cue in chapter.storyCues) {
-            if (!cue.triggered && abs(playerX - cue.x) < 90f) {
+            if (!cue.triggered && abs(playerX - cue.x) < 95f) {
                 cue.triggered = true
                 activeStoryText = cue.text
                 storyTimer = 5.5f
             }
         }
 
-        // Pitfall Check
         if (playerY > 820f) {
             triggerDeath()
             return
         }
 
-        // Goal / Chapter Completion Check
         if (overlaps(playerX, playerY, 34f, 68f, chapter.goalX, chapter.goalY, 70f, 130f)) {
             soundManager.playGoal()
             if (currentChapterIdx + 1 < 8) {
@@ -279,11 +260,12 @@ class LimboGameView(context: Context) : SurfaceView(context), SurfaceHolder.Call
         }
         for (c in chapter.crates) {
             if (overlaps(playerX, playerY, pw, ph, c.x, c.y, c.w, c.h)) {
+                isPushing = true
                 if (playerVx > 0f) {
-                    c.vx = 180f
+                    c.vx = 175f
                     playerX = c.x - pw
                 } else if (playerVx < 0f) {
-                    c.vx = -180f
+                    c.vx = -175f
                     playerX = c.x + c.w
                 }
             }
@@ -342,227 +324,274 @@ class LimboGameView(context: Context) : SurfaceView(context), SurfaceHolder.Call
             canvas.drawColor(Color.rgb(18, 20, 24))
         }
 
-        // Dark Atmospheric Vignette
-        paint.shader = RadialGradient(vW / 2f, vH / 2f, 750f, Color.TRANSPARENT, Color.argb(210, 0, 0, 0), Shader.TileMode.CLAMP)
+        paint.shader = RadialGradient(vW / 2f, vH / 2f, 780f, Color.TRANSPARENT, Color.argb(200, 0, 0, 0), Shader.TileMode.CLAMP)
         canvas.drawRect(0f, 0f, vW, vH, paint)
         paint.shader = null
 
         textPaint.color = Color.WHITE
         textPaint.textAlign = Paint.Align.CENTER
         textPaint.typeface = Typeface.create(Typeface.SERIF, Typeface.BOLD)
-        textPaint.textSize = 72f
-        canvas.drawText("SHADOW LIMBO", vW / 2f, 200f, textPaint)
+        textPaint.textSize = 74f
+        canvas.drawText("SHADOW LIMBO", vW / 2f, 195f, textPaint)
 
-        textPaint.textSize = 26f
-        textPaint.color = Color.rgb(190, 198, 210)
-        canvas.drawText("THE LOST SISTER  •  A WYRIX ORIGINAL", vW / 2f, 248f, textPaint)
+        textPaint.textSize = 24f
+        textPaint.color = Color.rgb(200, 208, 220)
+        canvas.drawText("THE LOST SISTER  •  A WYRIX ORIGINAL", vW / 2f, 242f, textPaint)
 
-        // Start Journey Button
-        drawMenuButton(canvas, vW / 2f - 180f, 340f, 360f, 74f, if (unlockedChapter > 0) "CONTINUE JOURNEY" else "START JOURNEY")
-        // Chapter Select Button
-        drawMenuButton(canvas, vW / 2f - 180f, 440f, 360f, 74f, "SELECT CHAPTER (${unlockedChapter + 1}/8)")
-        // Sound Toggle Button
-        drawMenuButton(canvas, vW / 2f - 180f, 540f, 360f, 64f, if (soundManager.isMuted) "AUDIO: MUTED" else "AUDIO: ON")
+        drawMenuButton(canvas, vW / 2f - 180f, 330f, 360f, 72f, if (unlockedChapter > 0) "CONTINUE JOURNEY" else "START JOURNEY")
+        drawMenuButton(canvas, vW / 2f - 180f, 428f, 360f, 72f, "SELECT CHAPTER (${unlockedChapter + 1}/8)")
+        drawMenuButton(canvas, vW / 2f - 180f, 526f, 360f, 64f, if (soundManager.isMuted) "AUDIO: MUTED" else "AUDIO: ON")
     }
 
     private fun renderChapterSelect(canvas: Canvas) {
-        canvas.drawColor(Color.rgb(16, 18, 22))
+        canvas.drawColor(Color.rgb(14, 16, 20))
         textPaint.color = Color.WHITE
         textPaint.textAlign = Paint.Align.CENTER
-        textPaint.textSize = 46f
-        canvas.drawText("SELECT STORY CHAPTER", vW / 2f, 95f, textPaint)
+        textPaint.textSize = 44f
+        canvas.drawText("SELECT STORY CHAPTER", vW / 2f, 92f, textPaint)
 
         val all = ChapterRepository.loadAllChapters(context)
         for (i in all.indices) {
             val col = i % 2
             val row = i / 2
             val bx = 130f + col * 520f
-            val by = 155f + row * 115f
+            val by = 152f + row * 115f
             val locked = i > unlockedChapter
             val label = if (locked) "LOCKED  •  CHAPTER ${i + 1}" else all[i].title
-            drawMenuButton(canvas, bx, by, 490f, 86f, label, dimmed = locked)
+            drawMenuButton(canvas, bx, by, 490f, 84f, label, dimmed = locked)
         }
 
         drawMenuButton(canvas, 40f, 35f, 160f, 55f, "← BACK")
     }
 
     private fun renderGameplay(canvas: Canvas) {
-        // 1. Sky Gradient
-        paint.shader = LinearGradient(0f, 0f, 0f, vH, chapter.skyTop, chapter.skyBottom, Shader.TileMode.CLAMP)
-        canvas.drawRect(0f, 0f, vW, vH, paint)
-        paint.shader = null
-
-        // 2. Parallax Hand-Drawn Layers
-        drawTiledParallax(canvas, bgFarBmp, 0.18f, 180)
-        drawTiledParallax(canvas, bgMidBmp, 0.42f, 225)
-
-        // 3. Solids & Ground
-        paint.color = Color.rgb(10, 11, 14)
-        for (s in chapter.solids) {
-            canvas.drawRect(s.x - cameraX, s.y, s.x - cameraX + s.w, s.y + s.h, paint)
+        if (skyDitheredBmp != null) {
+            canvas.drawBitmap(skyDitheredBmp, null, RectF(0f, 0f, vW, vH), paint)
+        } else {
+            canvas.drawColor(Color.rgb(65, 70, 78))
         }
 
-        // 4. Pressure Switches & Iron Gates
+        paint.color = chapter.skyBottom
+        paint.alpha = 70
+        canvas.drawRect(0f, 0f, vW, vH, paint)
+        paint.alpha = 255
+
+        drawTiledParallax(canvas, bgFarBmp, 0.14f, 220)
+        drawTiledParallax(canvas, bgMidBmp, 0.36f, 245)
+
+        for (s in chapter.solids) {
+            drawOrganicTerrain(canvas, s.x - cameraX, s.y, s.w, s.h)
+        }
+
         for (sw in chapter.switches) {
-            paint.color = if (sw.pressed) Color.WHITE else Color.rgb(90, 95, 105)
+            paint.color = if (sw.pressed) Color.WHITE else Color.rgb(110, 118, 128)
             val offset = if (sw.pressed) 6f else 0f
             canvas.drawRect(sw.x - cameraX, sw.y + offset, sw.x - cameraX + sw.w, sw.y + sw.h, paint)
         }
-        paint.color = Color.rgb(25, 28, 34)
         for (g in chapter.gates) {
             if (g.currentH > 2f) {
-                canvas.drawRect(g.x - cameraX, g.y, g.x - cameraX + g.w, g.y + g.currentH, paint)
+                val gx = g.x - cameraX
+                paint.color = Color.rgb(16, 18, 22)
+                canvas.drawRect(gx, g.y, gx + g.w, g.y + g.currentH, paint)
+                paint.color = Color.rgb(70, 76, 86)
+                canvas.drawRect(gx + 3f, g.y, gx + 6f, g.y + g.currentH, paint)
             }
         }
 
-        // 5. Pushable Wooden Crates
         for (c in chapter.crates) {
             val cx = c.x - cameraX
-            paint.color = Color.rgb(24, 26, 30)
+            paint.color = Color.rgb(18, 20, 24)
             canvas.drawRect(cx, c.y, cx + c.w, c.y + c.h, paint)
-            paint.color = Color.rgb(55, 60, 68)
+            paint.color = Color.rgb(68, 74, 84)
             paint.style = Paint.Style.STROKE
-            paint.strokeWidth = 4f
-            canvas.drawRect(cx + 4f, c.y + 4f, cx + c.w - 4f, c.y + c.h - 4f, paint)
+            paint.strokeWidth = 3.5f
+            canvas.drawRect(cx + 3f, c.y + 3f, cx + c.w - 3f, c.y + c.h - 3f, paint)
             canvas.drawLine(cx + 4f, c.y + 4f, cx + c.w - 4f, c.y + c.h - 4f, paint)
+            canvas.drawLine(cx + c.w - 4f, c.y + 4f, cx + 4f, c.y + c.h - 4f, paint)
             paint.style = Paint.Style.FILL
         }
 
-        // 6. Hazards (Spinning Sawblades & Bear Traps)
         for (h in chapter.hazards) {
             val hx = h.x - cameraX
             if (h.type == "saw") {
                 canvas.save()
                 canvas.translate(hx + h.w / 2f, h.y + h.h / 2f)
-                canvas.rotate(animTime * 420f)
-                paint.color = Color.rgb(15, 16, 20)
-                canvas.drawCircle(0f, 0f, h.w * 0.45f, paint)
-                for (t in 0 until 12) {
-                    canvas.rotate(30f)
-                    canvas.drawRect(-4f, -h.w * 0.54f, 4f, -h.w * 0.35f, paint)
+                canvas.rotate(animTime * 460f)
+                paint.color = Color.rgb(10, 11, 14)
+                canvas.drawCircle(0f, 0f, h.w * 0.44f, paint)
+                for (t in 0 until 14) {
+                    canvas.rotate(360f / 14f)
+                    canvas.drawRect(-3.5f, -h.w * 0.54f, 3.5f, -h.w * 0.34f, paint)
                 }
-                paint.color = Color.rgb(130, 138, 150)
-                canvas.drawCircle(0f, 0f, 7f, paint)
+                paint.style = Paint.Style.STROKE
+                paint.strokeWidth = 2f
+                paint.color = Color.rgb(145, 152, 165)
+                canvas.drawCircle(0f, 0f, h.w * 0.38f, paint)
+                paint.style = Paint.Style.FILL
+                canvas.drawCircle(0f, 0f, 6f, paint)
                 canvas.restore()
             } else {
-                // Bear Trap Jaws
-                paint.color = Color.rgb(12, 12, 15)
-                canvas.drawRect(hx, h.y + 14f, hx + h.w, h.y + h.h, paint)
-                canvas.drawRect(hx + 4f, h.y + 4f, hx + 12f, h.y + 16f, paint)
-                canvas.drawRect(hx + h.w - 12f, h.y + 4f, hx + h.w - 4f, h.y + 16f, paint)
+                paint.color = Color.rgb(8, 9, 12)
+                canvas.drawRect(hx, h.y + 15f, hx + h.w, h.y + h.h, paint)
+                for (tx in 0..3) {
+                    val bx = hx + 4f + tx * 10f
+                    canvas.drawRect(bx, h.y + 5f, bx + 5f, h.y + 16f, paint)
+                }
             }
         }
 
-        // 7. Goal Beacon (And Sister Aria Silhouette on Chapter 8!)
         val gx = chapter.goalX - cameraX
         val pulse = 0.55f + 0.25f * sin(animTime * 4f)
-        paint.shader = LinearGradient(gx, chapter.goalY - 80f, gx, chapter.goalY + 130f, Color.TRANSPARENT, Color.argb((pulse * 180).toInt(), 255, 255, 255), Shader.TileMode.CLAMP)
-        canvas.drawRect(gx - 10f, chapter.goalY - 80f, gx + 80f, chapter.goalY + 130f, paint)
+        paint.shader = LinearGradient(gx, chapter.goalY - 120f, gx, chapter.goalY + 130f, Color.TRANSPARENT, Color.argb((pulse * 195).toInt(), 255, 255, 255), Shader.TileMode.CLAMP)
+        canvas.drawRect(gx - 15f, chapter.goalY - 120f, gx + 85f, chapter.goalY + 130f, paint)
         paint.shader = null
 
         if (currentChapterIdx == 7) {
-            // Draw Sister Aria waiting under the light!
-            drawCharacterSilhouette(canvas, gx + 25f, chapter.goalY + 62f, facingRight = false, swing = 0f, isSister = true)
+            drawLimboCharacter(canvas, gx + 25f, chapter.goalY + 62f, facingRight = false, swing = 0f, pushing = false, isSister = true)
         }
 
-        // 8. Draw Protagonist Boy
-        val swing = if (abs(playerVx) > 10f && onGround) sin(animTime * 18f) * 9f else 0f
-        drawCharacterSilhouette(canvas, playerX - cameraX, playerY, facingRight, swing, isSister = false)
+        val swing = if (abs(playerVx) > 10f && onGround) sin(animTime * 19f) * 9.5f else 0f
+        drawLimboCharacter(canvas, playerX - cameraX, playerY, facingRight, swing, isPushing, isSister = false)
 
-        // 9. Atmospheric Rain & Volumetric Vignette
-        if (chapter.bgTheme == "rainy_city" || chapter.bgTheme == "swamp_ruins") {
-            paint.color = Color.argb(95, 220, 230, 240)
-            paint.strokeWidth = 2f
-            for (i in rainDrops.indices step 2) {
-                rainDrops[i] = (rainDrops[i] - 3f + vW) % vW
-                rainDrops[i + 1] = (rainDrops[i + 1] + 16f) % vH
-                canvas.drawLine(rainDrops[i], rainDrops[i + 1], rainDrops[i] - 5f, rainDrops[i + 1] + 18f, paint)
+        drawTiledParallax(canvas, fgTreesBmp, 1.35f, 235)
+
+        paint.color = Color.argb(120, 235, 240, 248)
+        for (i in dustParticles.indices step 3) {
+            dustParticles[i] = (dustParticles[i] - 0.8f + vW) % vW
+            dustParticles[i + 1] = (dustParticles[i + 1] + (if (chapter.bgTheme == "rainy_city") 14f else 0.4f)) % vH
+            if (chapter.bgTheme == "rainy_city") {
+                canvas.drawLine(dustParticles[i], dustParticles[i + 1], dustParticles[i] - 4f, dustParticles[i + 1] + 16f, paint)
+            } else {
+                canvas.drawCircle(dustParticles[i], dustParticles[i + 1], dustParticles[i + 2], paint)
             }
         }
 
-        paint.shader = RadialGradient(vW / 2f, vH / 2f, 760f, Color.TRANSPARENT, Color.argb((chapter.fogAlpha * 255).toInt(), 0, 0, 0), Shader.TileMode.CLAMP)
+        paint.shader = RadialGradient(vW / 2f, vH / 2f, 790f, Color.TRANSPARENT, Color.argb((chapter.fogAlpha * 240).toInt(), 0, 0, 0), Shader.TileMode.CLAMP)
         canvas.drawRect(0f, 0f, vW, vH, paint)
         paint.shader = null
 
-        // 10. Story Narrative Subtitles & Chapter Title Banner
         if (chapterBannerTimer > 0f) {
             val alpha = (chapterBannerTimer.coerceIn(0f, 1f) * 255).toInt()
             textPaint.color = Color.argb(alpha, 255, 255, 255)
             textPaint.textAlign = Paint.Align.CENTER
-            textPaint.textSize = 38f
-            canvas.drawText(chapter.title.uppercase(), vW / 2f, 115f, textPaint)
+            textPaint.textSize = 36f
+            canvas.drawText(chapter.title.uppercase(), vW / 2f, 110f, textPaint)
         }
 
         if (storyTimer > 0f && activeStoryText.isNotEmpty()) {
-            val alpha = (storyTimer.coerceIn(0f, 1f) * 240).toInt()
-            paint.color = Color.argb((alpha * 0.65f).toInt(), 8, 10, 14)
-            canvas.drawRoundRect(RectF(220f, 145f, vW - 220f, 205f), 14f, 14f, paint)
+            val alpha = (storyTimer.coerceIn(0f, 1f) * 245).toInt()
+            paint.color = Color.argb((alpha * 0.65f).toInt(), 6, 8, 12)
+            canvas.drawRoundRect(RectF(210f, 140f, vW - 210f, 198f), 14f, 14f, paint)
             textPaint.color = Color.argb(alpha, 245, 248, 255)
             textPaint.textAlign = Paint.Align.CENTER
-            textPaint.textSize = 23f
-            canvas.drawText(activeStoryText, vW / 2f, 183f, textPaint)
+            textPaint.textSize = 22f
+            canvas.drawText(activeStoryText, vW / 2f, 176f, textPaint)
         }
 
-        // 11. On-Screen Controls (Left, Right, Jump, Pause, Mute)
         drawGameplayControls(canvas)
     }
 
-    private fun drawCharacterSilhouette(canvas: Canvas, x: Float, y: Float, facingRight: Boolean, swing: Float, isSister: Boolean) {
-        paint.color = Color.rgb(6, 7, 10)
-        // Head
-        canvas.drawCircle(x + 17f, y + 14f, 13f, paint)
-        if (isSister) {
-            // Hair Ponytail silhouette
-            canvas.drawCircle(x + 28f, y + 12f, 7f, paint)
-        }
-        // Torso
-        canvas.drawRoundRect(RectF(x + 8f, y + 25f, x + 26f, y + 50f), 6f, 6f, paint)
-        // Legs
-        canvas.drawRect(x + 9f + swing, y + 48f, x + 15f + swing, y + 68f, paint)
-        canvas.drawRect(x + 19f - swing, y + 48f, x + 25f - swing, y + 68f, paint)
+    private fun drawOrganicTerrain(canvas: Canvas, x: Float, y: Float, w: Float, h: Float) {
+        if (x + w < -60f || x > vW + 60f) return
+        paint.color = Color.rgb(4, 5, 7)
 
-        // Glowing White Eyes
+        terrainPath.reset()
+        terrainPath.moveTo(x, y + h)
+        terrainPath.lineTo(x, y + 4f)
+        var cx = x
+        while (cx < x + w) {
+            val wave = sin((cx + x) * 0.045f) * 3.5f + cos((cx + x) * 0.11f) * 2f
+            terrainPath.lineTo(cx, y + wave)
+            cx += 18f
+        }
+        terrainPath.lineTo(x + w, y + 4f)
+        terrainPath.lineTo(x + w, y + h)
+        terrainPath.close()
+        canvas.drawPath(terrainPath, paint)
+
+        paint.strokeWidth = 2f
+        var gx = x + 8f
+        while (gx < x + w - 8f) {
+            val gh = 5f + abs(sin(gx * 0.17f)) * 7f
+            canvas.drawLine(gx, y + 2f, gx - 3f, y - gh, paint)
+            canvas.drawLine(gx + 4f, y + 2f, gx + 7f, y - gh * 0.8f, paint)
+            gx += 22f
+        }
+
+        if (h < 60f) {
+            var vx = x + 24f
+            while (vx < x + w - 24f) {
+                val vlen = 16f + abs(cos(vx * 0.09f)) * 28f
+                canvas.drawLine(vx, y + h - 2f, vx + sin(animTime * 2f + vx) * 4f, y + h + vlen, paint)
+                vx += 48f
+            }
+        }
+    }
+
+    private fun drawLimboCharacter(canvas: Canvas, x: Float, y: Float, facingRight: Boolean, swing: Float, pushing: Boolean, isSister: Boolean) {
+        val lean = if (pushing) (if (facingRight) 5f else -5f) else (if (abs(playerVx) > 10f && !isSister) (if (facingRight) 2.5f else -2.5f) else 0f)
+        paint.color = Color.rgb(4, 5, 7)
+
+        val hx = x + 17f + lean
+        val hy = y + 14f
+        canvas.drawCircle(hx, hy, 13.5f, paint)
+        canvas.drawCircle(hx - 6f, hy - 11f, 5f, paint)
+        canvas.drawCircle(hx + 1f, hy - 13f, 5.5f, paint)
+        canvas.drawCircle(hx + 7f, hy - 10f, 4.5f, paint)
+        if (isSister) canvas.drawCircle(hx + 13f, hy - 2f, 7f, paint)
+
+        canvas.drawRoundRect(RectF(x + 9f + lean * 0.6f, y + 25f, x + 25f + lean * 0.6f, y + 49f), 5f, 5f, paint)
+
+        paint.strokeWidth = 4.5f
+        if (pushing) {
+            val reachX = if (facingRight) x + 36f else x - 2f
+            canvas.drawLine(x + 17f + lean, y + 31f, reachX, y + 34f, paint)
+        } else {
+            canvas.drawLine(x + 17f + lean, y + 30f, x + 17f - swing * 0.6f, y + 46f, paint)
+        }
+
+        canvas.drawLine(x + 13f, y + 48f, x + 11f + swing, y + 68f, paint)
+        canvas.drawLine(x + 21f, y + 48f, x + 23f - swing, y + 68f, paint)
+
+        val eyeX = if (facingRight) hx + 3f else hx - 8f
+        paint.color = Color.argb(65, 255, 255, 255)
+        canvas.drawCircle(eyeX + 2.5f, hy - 1f, 8f, paint)
         paint.color = Color.WHITE
-        val eyeX = if (facingRight) x + 20f else x + 9f
-        canvas.drawCircle(eyeX, y + 13f, 2.3f, paint)
-        canvas.drawCircle(eyeX + 5f, y + 13f, 2.3f, paint)
+        canvas.drawCircle(eyeX, hy - 1f, 2.4f, paint)
+        canvas.drawCircle(eyeX + 5.2f, hy - 1f, 2.4f, paint)
     }
 
     private fun drawGameplayControls(canvas: Canvas) {
-        // Left Button
-        drawControlCircle(canvas, 115f, 610f, 62f, "◀", btnLeft)
-        // Right Button
-        drawControlCircle(canvas, 265f, 610f, 62f, "▶", btnRight)
-        // Jump Button
-        drawControlCircle(canvas, 1155f, 605f, 70f, "▲", btnJump)
+        drawControlCircle(canvas, 110f, 615f, 56f, "◀", btnLeft)
+        drawControlCircle(canvas, 250f, 615f, 56f, "▶", btnRight)
+        drawControlCircle(canvas, 1165f, 610f, 64f, "▲", btnJump)
 
-        // Top-Right Pause & Audio Buttons
-        drawMenuButton(canvas, 1150f, 28f, 95f, 48f, "II")
-        drawMenuButton(canvas, 1035f, 28f, 95f, 48f, if (soundManager.isMuted) "MUTE" else "SFX")
+        drawMenuButton(canvas, 1150f, 28f, 95f, 46f, "II")
+        drawMenuButton(canvas, 1035f, 28f, 95f, 46f, if (soundManager.isMuted) "MUTE" else "SFX")
     }
 
     private fun drawControlCircle(canvas: Canvas, cx: Float, cy: Float, r: Float, symbol: String, active: Boolean) {
-        paint.color = if (active) Color.argb(135, 255, 255, 255) else Color.argb(55, 255, 255, 255)
+        paint.color = if (active) Color.argb(120, 255, 255, 255) else Color.argb(40, 255, 255, 255)
         canvas.drawCircle(cx, cy, r, paint)
         paint.style = Paint.Style.STROKE
-        paint.strokeWidth = 3f
-        paint.color = Color.argb(140, 255, 255, 255)
+        paint.strokeWidth = 2.5f
+        paint.color = Color.argb(115, 255, 255, 255)
         canvas.drawCircle(cx, cy, r, paint)
         paint.style = Paint.Style.FILL
 
-        textPaint.color = Color.WHITE
+        textPaint.color = Color.argb(210, 255, 255, 255)
         textPaint.textAlign = Paint.Align.CENTER
-        textPaint.textSize = 32f
-        canvas.drawText(symbol, cx, cy + 11f, textPaint)
+        textPaint.textSize = 28f
+        canvas.drawText(symbol, cx, cy + 10f, textPaint)
     }
 
     private fun renderPauseOverlay(canvas: Canvas) {
-        paint.color = Color.argb(190, 10, 12, 16)
+        paint.color = Color.argb(195, 8, 10, 14)
         canvas.drawRect(0f, 0f, vW, vH, paint)
 
         textPaint.color = Color.WHITE
         textPaint.textAlign = Paint.Align.CENTER
-        textPaint.textSize = 52f
+        textPaint.textSize = 50f
         canvas.drawText("GAME PAUSED", vW / 2f, 220f, textPaint)
 
         drawMenuButton(canvas, vW / 2f - 170f, 290f, 340f, 68f, "RESUME")
@@ -574,10 +603,10 @@ class LimboGameView(context: Context) : SurfaceView(context), SurfaceHolder.Call
         canvas.drawColor(Color.rgb(220, 226, 235))
         textPaint.color = Color.rgb(15, 18, 24)
         textPaint.textAlign = Paint.Align.CENTER
-        textPaint.textSize = 56f
+        textPaint.textSize = 54f
         canvas.drawText("REUNITED IN THE LIGHT", vW / 2f, 240f, textPaint)
 
-        textPaint.textSize = 28f
+        textPaint.textSize = 26f
         canvas.drawText("You guided the lost boy through all 8 chapters and rescued Aria.", vW / 2f, 310f, textPaint)
         canvas.drawText("Thank you for playing Shadow Limbo — Developed by WYRIX", vW / 2f, 360f, textPaint)
 
@@ -585,25 +614,25 @@ class LimboGameView(context: Context) : SurfaceView(context), SurfaceHolder.Call
     }
 
     private fun drawMenuButton(canvas: Canvas, x: Float, y: Float, w: Float, h: Float, label: String, dimmed: Boolean = false) {
-        paint.color = if (dimmed) Color.argb(70, 30, 34, 40) else Color.argb(165, 20, 23, 28)
+        paint.color = if (dimmed) Color.argb(70, 30, 34, 40) else Color.argb(150, 16, 18, 24)
         canvas.drawRoundRect(RectF(x, y, x + w, y + h), 12f, 12f, paint)
         paint.style = Paint.Style.STROKE
-        paint.strokeWidth = 2.5f
-        paint.color = if (dimmed) Color.argb(80, 150, 160, 175) else Color.argb(190, 220, 228, 240)
+        paint.strokeWidth = 2f
+        paint.color = if (dimmed) Color.argb(80, 150, 160, 175) else Color.argb(175, 220, 228, 240)
         canvas.drawRoundRect(RectF(x, y, x + w, y + h), 12f, 12f, paint)
         paint.style = Paint.Style.FILL
 
         textPaint.color = if (dimmed) Color.argb(120, 200, 205, 215) else Color.WHITE
         textPaint.textAlign = Paint.Align.CENTER
-        textPaint.textSize = 24f
-        canvas.drawText(label, x + w / 2f, y + h / 2f + 9f, textPaint)
+        textPaint.textSize = 23f
+        canvas.drawText(label, x + w / 2f, y + h / 2f + 8f, textPaint)
     }
 
     private fun drawTiledParallax(canvas: Canvas, bmp: Bitmap?, factor: Float, alpha: Int) {
         if (bmp == null) return
         paint.alpha = alpha
-        val tileW = vW
-        val offset = -((cameraX * factor) % tileW)
+        val tileW = vW * 1.35f
+        val offset = -(((cameraX * factor) % tileW + tileW) % tileW)
         canvas.drawBitmap(bmp, null, RectF(offset, 0f, offset + tileW, vH), paint)
         canvas.drawBitmap(bmp, null, RectF(offset + tileW, 0f, offset + tileW * 2f, vH), paint)
         paint.alpha = 255
@@ -615,14 +644,11 @@ class LimboGameView(context: Context) : SurfaceView(context), SurfaceHolder.Call
 
         if (state != GameState.PLAYING) {
             if (event.actionMasked == MotionEvent.ACTION_DOWN) {
-                val tx = event.x * sx
-                val ty = event.y * sy
-                handleMenuTouch(tx, ty)
+                handleMenuTouch(event.x * sx, event.y * sy)
             }
             return true
         }
 
-        // Gameplay Multi-Touch Controls
         var left = false
         var right = false
         var jump = false
@@ -636,19 +662,19 @@ class LimboGameView(context: Context) : SurfaceView(context), SurfaceHolder.Call
             val ty = event.getY(i) * sy
 
             if (action == MotionEvent.ACTION_DOWN || action == MotionEvent.ACTION_POINTER_DOWN) {
-                if (tx in 1150f..1245f && ty in 28f..76f) {
+                if (tx in 1150f..1245f && ty in 28f..74f) {
                     state = GameState.PAUSED
                     return true
                 }
-                if (tx in 1035f..1130f && ty in 28f..76f) {
+                if (tx in 1035f..1130f && ty in 28f..74f) {
                     soundManager.toggleMute()
                     return true
                 }
             }
 
-            if (dist(tx, ty, 115f, 610f) <= 85f) left = true
-            else if (dist(tx, ty, 265f, 610f) <= 85f) right = true
-            else if (dist(tx, ty, 1155f, 605f) <= 95f) jump = true
+            if (dist(tx, ty, 110f, 615f) <= 82f) left = true
+            else if (dist(tx, ty, 250f, 615f) <= 82f) right = true
+            else if (dist(tx, ty, 1165f, 610f) <= 92f) jump = true
         }
 
         btnLeft = left
@@ -662,9 +688,9 @@ class LimboGameView(context: Context) : SurfaceView(context), SurfaceHolder.Call
             GameState.MENU -> {
                 if (tx in (vW / 2f - 180f)..(vW / 2f + 180f)) {
                     when (ty) {
-                        in 340f..414f -> startChapter(unlockedChapter)
-                        in 440f..514f -> state = GameState.CHAPTER_SELECT
-                        in 540f..604f -> soundManager.toggleMute()
+                        in 330f..402f -> startChapter(unlockedChapter)
+                        in 428f..500f -> state = GameState.CHAPTER_SELECT
+                        in 526f..590f -> soundManager.toggleMute()
                     }
                 }
             }
@@ -677,8 +703,8 @@ class LimboGameView(context: Context) : SurfaceView(context), SurfaceHolder.Call
                     val col = i % 2
                     val row = i / 2
                     val bx = 130f + col * 520f
-                    val by = 155f + row * 115f
-                    if (tx in bx..(bx + 490f) && ty in by..(by + 86f) && i <= unlockedChapter) {
+                    val by = 152f + row * 115f
+                    if (tx in bx..(bx + 490f) && ty in by..(by + 84f) && i <= unlockedChapter) {
                         startChapter(i)
                         return
                     }
