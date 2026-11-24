@@ -689,7 +689,7 @@ class LimboGameView(context: Context) : SurfaceView(context), SurfaceHolder.Call
         paint.shader = null
 
         if (currentChapterIdx == 7) {
-            drawLimboCharacter(canvas, gx + 25f, chapter.goalY + 62f, facingRight = false, swing = 0f, handsUp = false, isSister = true)
+            drawLimboCharacter(canvas, gx + 25f, chapter.goalY + 62f, facingRight = false, swing = 0f, handsActive = false, isSister = true)
         }
 
         // Proportional Limbo Boy Character (with Raised Arms when Hanging on Ropes/Ledges or Grabbing Crates!)
