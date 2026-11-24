@@ -500,7 +500,7 @@ class LimboGameView(context: Context) : SurfaceView(context), SurfaceHolder.Call
             textPaint.color = Color.argb(alpha, 245, 248, 255)
             textPaint.textAlign = Paint.Align.CENTER
             textPaint.textSize = 23f
-            canvas.drawText(""$activeStoryText"", vW / 2f, 183f, textPaint)
+            canvas.drawText(activeStoryText, vW / 2f, 183f, textPaint)
         }
 
         // 11. On-Screen Controls (Left, Right, Jump, Pause, Mute)
