@@ -1,0 +1,20 @@
+<?xml version="1.0" encoding="utf-8"?>
+<vector xmlns:android="http://schemas.android.com/apk/res/android"
+    android:width="108dp"
+    android:height="108dp"
+    android:viewportWidth="108"
+    android:viewportHeight="108">
+    <!-- Deep Night Sky -->
+    <path android:fillColor="#0B0D11" android:pathData="M0,0h108v108h-108z" />
+    <!-- Outer Volumetric Mist Halo -->
+    <path android:fillColor="#1E232B" android:pathData="M54,6 A44,44 0 1,0 54,94 A44,44 0 1,0 54,6 Z" />
+    <!-- Mid Mist Ring -->
+    <path android:fillColor="#47505E" android:pathData="M54,14 A35,35 0 1,0 54,84 A35,35 0 1,0 54,14 Z" />
+    <!-- Bright Glowing Moon -->
+    <path android:fillColor="#C8D0DC" android:pathData="M54,22 A25,25 0 1,0 54,72 A25,25 0 1,0 54,22 Z" />
+    <!-- Distant Dead Forest Trees -->
+    <path android:fillColor="#13161C" android:pathData="M14,0 L19,0 L18,108 L13,108 Z" />
+    <path android:fillColor="#13161C" android:pathData="M89,0 L94,0 L95,108 L90,108 Z" />
+    <path android:fillColor="#181C24" android:pathData="M24,15 L27,15 L26,108 L23,108 Z" />
+    <path android:fillColor="#181C24" android:pathData="M81,12 L84,12 L85,108 L82,108 Z" />
+</vector>

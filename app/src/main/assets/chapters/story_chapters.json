@@ -1,0 +1,1077 @@
+{
+  "chapters": [
+    {
+      "id": 1,
+      "title": "Chapter 1: Awakening in the Mist",
+      "subtitle": "Where am I? My sister Aria was right beside me before the crash...",
+      "skyTop": "#AEB5BF",
+      "skyBottom": "#4A5058",
+      "fogAlpha": 0.35,
+      "bgTheme": "forest_mist",
+      "audioTrack": "audio/ch1_whispering_woods.wav",
+      "spawn": [
+        120,
+        460
+      ],
+      "goal": [
+        3400,
+        410
+      ],
+      "storyTriggers": [
+        {
+          "x": 150,
+          "text": "Cold fog... Silence everywhere. Aria? Are you out there?"
+        },
+        {
+          "x": 1150,
+          "text": "Her blue ribbon is caught on this dead branch. She walked this way."
+        },
+        {
+          "x": 2450,
+          "text": "The forest grows darker. Something is watching from the shadows."
+        }
+      ],
+      "solids": [
+        [
+          -200,
+          540,
+          1100,
+          350
+        ],
+        [
+          1060,
+          540,
+          820,
+          350
+        ],
+        [
+          2050,
+          490,
+          750,
+          400
+        ],
+        [
+          2950,
+          540,
+          850,
+          350
+        ],
+        [
+          620,
+          410,
+          200,
+          26
+        ],
+        [
+          1420,
+          390,
+          240,
+          26
+        ],
+        [
+          2320,
+          350,
+          220,
+          26
+        ]
+      ],
+      "crates": [
+        [
+          510,
+          460,
+          72,
+          72
+        ],
+        [
+          1300,
+          460,
+          75,
+          75
+        ]
+      ],
+      "switches": [
+        {
+          "x": 1510,
+          "y": 376,
+          "w": 44,
+          "h": 14,
+          "gateIndex": 0
+        }
+      ],
+      "gates": [
+        {
+          "x": 1820,
+          "y": 360,
+          "w": 28,
+          "h": 180
+        }
+      ],
+      "hazards": [
+        {
+          "x": 760,
+          "y": 514,
+          "w": 46,
+          "h": 26,
+          "type": "trap",
+          "vx": 0,
+          "minX": 0,
+          "maxX": 0
+        },
+        {
+          "x": 2180,
+          "y": 464,
+          "w": 48,
+          "h": 26,
+          "type": "trap",
+          "vx": 0,
+          "minX": 0,
+          "maxX": 0
+        }
+      ]
+    },
+    {
+      "id": 2,
+      "title": "Chapter 2: The Sunken Causeway",
+      "subtitle": "Old wooden bridges rot over black water. One wrong step is fatal.",
+      "skyTop": "#9BA4B0",
+      "skyBottom": "#3C424B",
+      "fogAlpha": 0.42,
+      "bgTheme": "swamp_ruins",
+      "audioTrack": "audio/ch2_sunken_swamp.wav",
+      "spawn": [
+        120,
+        460
+      ],
+      "goal": [
+        3650,
+        410
+      ],
+      "storyTriggers": [
+        {
+          "x": 200,
+          "text": "The old bridge collapsed years ago. Use the heavy crates to cross safely."
+        },
+        {
+          "x": 1850,
+          "text": "Tiny footprints in the mud... Aria crossed this swamp alone."
+        }
+      ],
+      "solids": [
+        [
+          -200,
+          540,
+          950,
+          350
+        ],
+        [
+          920,
+          540,
+          680,
+          350
+        ],
+        [
+          1780,
+          500,
+          840,
+          390
+        ],
+        [
+          2800,
+          540,
+          1100,
+          350
+        ],
+        [
+          1150,
+          380,
+          210,
+          26
+        ],
+        [
+          2150,
+          360,
+          240,
+          26
+        ]
+      ],
+      "crates": [
+        [
+          620,
+          460,
+          74,
+          74
+        ],
+        [
+          1060,
+          460,
+          74,
+          74
+        ],
+        [
+          2020,
+          420,
+          76,
+          76
+        ]
+      ],
+      "switches": [
+        {
+          "x": 2230,
+          "y": 346,
+          "w": 44,
+          "h": 14,
+          "gateIndex": 0
+        }
+      ],
+      "gates": [
+        {
+          "x": 2560,
+          "y": 320,
+          "w": 28,
+          "h": 180
+        }
+      ],
+      "hazards": [
+        {
+          "x": 1360,
+          "y": 480,
+          "w": 64,
+          "h": 64,
+          "type": "saw",
+          "vx": 150,
+          "minX": 1220,
+          "maxX": 1540
+        },
+        {
+          "x": 3020,
+          "y": 514,
+          "w": 48,
+          "h": 26,
+          "type": "trap",
+          "vx": 0,
+          "minX": 0,
+          "maxX": 0
+        }
+      ]
+    },
+    {
+      "id": 3,
+      "title": "Chapter 3: Valley of Iron Traps",
+      "subtitle": "Hunters left rusted jaws hidden in the tall grass.",
+      "skyTop": "#8E96A2",
+      "skyBottom": "#323740",
+      "fogAlpha": 0.45,
+      "bgTheme": "hunter_valley",
+      "audioTrack": "audio/ch3_iron_traps.wav",
+      "spawn": [
+        120,
+        460
+      ],
+      "goal": [
+        3800,
+        410
+      ],
+      "storyTriggers": [
+        {
+          "x": 180,
+          "text": "Iron bear traps... Whoever built this place didn't want anyone leaving."
+        },
+        {
+          "x": 2300,
+          "text": "Push the crate onto the pressure plate to unlock the iron gate."
+        }
+      ],
+      "solids": [
+        [
+          -200,
+          540,
+          1200,
+          350
+        ],
+        [
+          1180,
+          540,
+          950,
+          350
+        ],
+        [
+          2300,
+          540,
+          1750,
+          350
+        ],
+        [
+          700,
+          400,
+          220,
+          26
+        ],
+        [
+          1600,
+          390,
+          240,
+          26
+        ],
+        [
+          2850,
+          380,
+          250,
+          26
+        ]
+      ],
+      "crates": [
+        [
+          450,
+          460,
+          74,
+          74
+        ],
+        [
+          1420,
+          460,
+          74,
+          74
+        ],
+        [
+          2480,
+          460,
+          76,
+          76
+        ]
+      ],
+      "switches": [
+        {
+          "x": 2720,
+          "y": 526,
+          "w": 48,
+          "h": 14,
+          "gateIndex": 0
+        }
+      ],
+      "gates": [
+        {
+          "x": 3250,
+          "y": 360,
+          "w": 30,
+          "h": 180
+        }
+      ],
+      "hazards": [
+        {
+          "x": 640,
+          "y": 514,
+          "w": 46,
+          "h": 26,
+          "type": "trap",
+          "vx": 0,
+          "minX": 0,
+          "maxX": 0
+        },
+        {
+          "x": 850,
+          "y": 514,
+          "w": 46,
+          "h": 26,
+          "type": "trap",
+          "vx": 0,
+          "minX": 0,
+          "maxX": 0
+        },
+        {
+          "x": 1750,
+          "y": 480,
+          "w": 66,
+          "h": 66,
+          "type": "saw",
+          "vx": 180,
+          "minX": 1520,
+          "maxX": 2050
+        },
+        {
+          "x": 3420,
+          "y": 480,
+          "w": 68,
+          "h": 68,
+          "type": "saw",
+          "vx": 190,
+          "minX": 3320,
+          "maxX": 3680
+        }
+      ]
+    },
+    {
+      "id": 4,
+      "title": "Chapter 4: The Abandoned Mill",
+      "subtitle": "Grinding gears and spinning blades still run without workers.",
+      "skyTop": "#828A96",
+      "skyBottom": "#2B3038",
+      "fogAlpha": 0.48,
+      "bgTheme": "industrial_mill",
+      "audioTrack": "audio/ch4_abandoned_mill.wav",
+      "spawn": [
+        120,
+        460
+      ],
+      "goal": [
+        3950,
+        410
+      ],
+      "storyTriggers": [
+        {
+          "x": 220,
+          "text": "An abandoned lumber mill... The sawblades never stopped spinning."
+        },
+        {
+          "x": 2600,
+          "text": "I hear Aria calling from beyond the factory wall! Hold on!"
+        }
+      ],
+      "solids": [
+        [
+          -200,
+          540,
+          1100,
+          350
+        ],
+        [
+          1080,
+          490,
+          900,
+          400
+        ],
+        [
+          2160,
+          540,
+          950,
+          350
+        ],
+        [
+          3280,
+          540,
+          950,
+          350
+        ],
+        [
+          620,
+          390,
+          220,
+          26
+        ],
+        [
+          1480,
+          350,
+          250,
+          26
+        ],
+        [
+          2520,
+          390,
+          240,
+          26
+        ]
+      ],
+      "crates": [
+        [
+          480,
+          460,
+          74,
+          74
+        ],
+        [
+          1320,
+          410,
+          74,
+          74
+        ],
+        [
+          2360,
+          460,
+          76,
+          76
+        ]
+      ],
+      "switches": [
+        {
+          "x": 2610,
+          "y": 376,
+          "w": 46,
+          "h": 14,
+          "gateIndex": 0
+        }
+      ],
+      "gates": [
+        {
+          "x": 2980,
+          "y": 360,
+          "w": 30,
+          "h": 180
+        }
+      ],
+      "hazards": [
+        {
+          "x": 760,
+          "y": 480,
+          "w": 66,
+          "h": 66,
+          "type": "saw",
+          "vx": 185,
+          "minX": 580,
+          "maxX": 860
+        },
+        {
+          "x": 1650,
+          "y": 430,
+          "w": 68,
+          "h": 68,
+          "type": "saw",
+          "vx": 210,
+          "minX": 1420,
+          "maxX": 1920
+        },
+        {
+          "x": 3500,
+          "y": 480,
+          "w": 70,
+          "h": 70,
+          "type": "saw",
+          "vx": 220,
+          "minX": 3350,
+          "maxX": 3820
+        }
+      ]
+    },
+    {
+      "id": 5,
+      "title": "Chapter 5: Rooftops of Despair",
+      "subtitle": "High above the flooded city, rain washes away all footprints.",
+      "skyTop": "#78808C",
+      "skyBottom": "#242830",
+      "fogAlpha": 0.5,
+      "bgTheme": "rainy_city",
+      "audioTrack": "audio/ch5_rainy_rooftops.wav",
+      "spawn": [
+        120,
+        420
+      ],
+      "goal": [
+        4050,
+        390
+      ],
+      "storyTriggers": [
+        {
+          "x": 180,
+          "text": "A sunken city drowned in endless rain. Watch your footing on the ledges."
+        },
+        {
+          "x": 2800,
+          "text": "That silhouette on the far tower... Is that her?"
+        }
+      ],
+      "solids": [
+        [
+          -200,
+          500,
+          920,
+          390
+        ],
+        [
+          900,
+          460,
+          720,
+          430
+        ],
+        [
+          1800,
+          520,
+          820,
+          370
+        ],
+        [
+          2800,
+          480,
+          680,
+          410
+        ],
+        [
+          3650,
+          520,
+          700,
+          370
+        ],
+        [
+          1150,
+          330,
+          210,
+          26
+        ],
+        [
+          2120,
+          380,
+          230,
+          26
+        ]
+      ],
+      "crates": [
+        [
+          460,
+          420,
+          74,
+          74
+        ],
+        [
+          1960,
+          440,
+          74,
+          74
+        ],
+        [
+          2950,
+          400,
+          76,
+          76
+        ]
+      ],
+      "switches": [
+        {
+          "x": 2210,
+          "y": 366,
+          "w": 46,
+          "h": 14,
+          "gateIndex": 0
+        }
+      ],
+      "gates": [
+        {
+          "x": 2520,
+          "y": 340,
+          "w": 30,
+          "h": 180
+        }
+      ],
+      "hazards": [
+        {
+          "x": 1340,
+          "y": 434,
+          "w": 48,
+          "h": 26,
+          "type": "trap",
+          "vx": 0,
+          "minX": 0,
+          "maxX": 0
+        },
+        {
+          "x": 3180,
+          "y": 420,
+          "w": 68,
+          "h": 68,
+          "type": "saw",
+          "vx": 200,
+          "minX": 2920,
+          "maxX": 3420
+        }
+      ]
+    },
+    {
+      "id": 6,
+      "title": "Chapter 6: The Clockwork Core",
+      "subtitle": "Deep underground, massive pistons and saws guard the inner sanctum.",
+      "skyTop": "#6B727E",
+      "skyBottom": "#1D2027",
+      "fogAlpha": 0.52,
+      "bgTheme": "clockwork_core",
+      "audioTrack": "audio/ch6_clockwork_core.wav",
+      "spawn": [
+        120,
+        460
+      ],
+      "goal": [
+        4200,
+        410
+      ],
+      "storyTriggers": [
+        {
+          "x": 200,
+          "text": "The air smells of oil and rust. Every mechanism here is synchronized."
+        },
+        {
+          "x": 3100,
+          "text": "Two locks, one passage. Timing is everything."
+        }
+      ],
+      "solids": [
+        [
+          -200,
+          540,
+          1150,
+          350
+        ],
+        [
+          1120,
+          540,
+          1050,
+          350
+        ],
+        [
+          2350,
+          540,
+          1050,
+          350
+        ],
+        [
+          3580,
+          540,
+          900,
+          350
+        ],
+        [
+          640,
+          400,
+          220,
+          26
+        ],
+        [
+          1540,
+          390,
+          240,
+          26
+        ],
+        [
+          2740,
+          380,
+          250,
+          26
+        ]
+      ],
+      "crates": [
+        [
+          480,
+          460,
+          74,
+          74
+        ],
+        [
+          1380,
+          460,
+          74,
+          74
+        ],
+        [
+          2520,
+          460,
+          76,
+          76
+        ]
+      ],
+      "switches": [
+        {
+          "x": 1640,
+          "y": 376,
+          "w": 46,
+          "h": 14,
+          "gateIndex": 0
+        },
+        {
+          "x": 2840,
+          "y": 366,
+          "w": 46,
+          "h": 14,
+          "gateIndex": 1
+        }
+      ],
+      "gates": [
+        {
+          "x": 2060,
+          "y": 360,
+          "w": 30,
+          "h": 180
+        },
+        {
+          "x": 3280,
+          "y": 360,
+          "w": 30,
+          "h": 180
+        }
+      ],
+      "hazards": [
+        {
+          "x": 820,
+          "y": 480,
+          "w": 68,
+          "h": 68,
+          "type": "saw",
+          "vx": 210,
+          "minX": 620,
+          "maxX": 920
+        },
+        {
+          "x": 1820,
+          "y": 514,
+          "w": 48,
+          "h": 26,
+          "type": "trap",
+          "vx": 0,
+          "minX": 0,
+          "maxX": 0
+        },
+        {
+          "x": 3820,
+          "y": 480,
+          "w": 72,
+          "h": 72,
+          "type": "saw",
+          "vx": 235,
+          "minX": 3660,
+          "maxX": 4080
+        }
+      ]
+    },
+    {
+      "id": 7,
+      "title": "Chapter 7: Edge of Purgatory",
+      "subtitle": "Reality fractures as you near the boundary between life and memory.",
+      "skyTop": "#8E949E",
+      "skyBottom": "#1A1C22",
+      "fogAlpha": 0.55,
+      "bgTheme": "purgatory_edge",
+      "audioTrack": "audio/ch7_purgatory_edge.wav",
+      "spawn": [
+        120,
+        460
+      ],
+      "goal": [
+        4350,
+        410
+      ],
+      "storyTriggers": [
+        {
+          "x": 220,
+          "text": "The trees are turning into glass and shadow... I am almost at the edge."
+        },
+        {
+          "x": 3200,
+          "text": "I can see the light ahead. Aria is waiting beneath the white tree."
+        }
+      ],
+      "solids": [
+        [
+          -200,
+          540,
+          1050,
+          350
+        ],
+        [
+          1020,
+          490,
+          950,
+          400
+        ],
+        [
+          2150,
+          540,
+          1050,
+          350
+        ],
+        [
+          3380,
+          540,
+          1250,
+          350
+        ],
+        [
+          620,
+          390,
+          210,
+          26
+        ],
+        [
+          1440,
+          350,
+          240,
+          26
+        ],
+        [
+          2560,
+          390,
+          250,
+          26
+        ]
+      ],
+      "crates": [
+        [
+          450,
+          460,
+          74,
+          74
+        ],
+        [
+          1280,
+          410,
+          74,
+          74
+        ],
+        [
+          2380,
+          460,
+          76,
+          76
+        ],
+        [
+          3550,
+          460,
+          76,
+          76
+        ]
+      ],
+      "switches": [
+        {
+          "x": 2660,
+          "y": 376,
+          "w": 46,
+          "h": 14,
+          "gateIndex": 0
+        }
+      ],
+      "gates": [
+        {
+          "x": 3080,
+          "y": 360,
+          "w": 30,
+          "h": 180
+        }
+      ],
+      "hazards": [
+        {
+          "x": 760,
+          "y": 514,
+          "w": 48,
+          "h": 26,
+          "type": "trap",
+          "vx": 0,
+          "minX": 0,
+          "maxX": 0
+        },
+        {
+          "x": 1680,
+          "y": 430,
+          "w": 70,
+          "h": 70,
+          "type": "saw",
+          "vx": 225,
+          "minX": 1420,
+          "maxX": 1920
+        },
+        {
+          "x": 3820,
+          "y": 480,
+          "w": 72,
+          "h": 72,
+          "type": "saw",
+          "vx": 240,
+          "minX": 3660,
+          "maxX": 4180
+        }
+      ]
+    },
+    {
+      "id": 8,
+      "title": "Chapter 8: Reunion in the White Clearing",
+      "subtitle": "Every step through the darkness led to this final quiet clearing.",
+      "skyTop": "#D6DCE5",
+      "skyBottom": "#7A828E",
+      "fogAlpha": 0.25,
+      "bgTheme": "white_clearing",
+      "audioTrack": "audio/ch8_reunion_finale.wav",
+      "spawn": [
+        120,
+        460
+      ],
+      "goal": [
+        3200,
+        410
+      ],
+      "storyTriggers": [
+        {
+          "x": 180,
+          "text": "The storm has stopped. Warm light breaks through the mist."
+        },
+        {
+          "x": 1500,
+          "text": "One last obstacle between us..."
+        },
+        {
+          "x": 2850,
+          "text": "Aria! You're safe... We finally found our way out of Limbo."
+        }
+      ],
+      "solids": [
+        [
+          -200,
+          540,
+          1400,
+          350
+        ],
+        [
+          1380,
+          540,
+          2100,
+          350
+        ],
+        [
+          860,
+          400,
+          240,
+          26
+        ],
+        [
+          1960,
+          390,
+          250,
+          26
+        ]
+      ],
+      "crates": [
+        [
+          700,
+          460,
+          76,
+          76
+        ],
+        [
+          1780,
+          460,
+          76,
+          76
+        ]
+      ],
+      "switches": [
+        {
+          "x": 2060,
+          "y": 376,
+          "w": 46,
+          "h": 14,
+          "gateIndex": 0
+        }
+      ],
+      "gates": [
+        {
+          "x": 2520,
+          "y": 360,
+          "w": 30,
+          "h": 180
+        }
+      ],
+      "hazards": [
+        {
+          "x": 1620,
+          "y": 514,
+          "w": 48,
+          "h": 26,
+          "type": "trap",
+          "vx": 0,
+          "minX": 0,
+          "maxX": 0
+        }
+      ]
+    }
+  ]
+}

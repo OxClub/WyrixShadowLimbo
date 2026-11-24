@@ -1,0 +1,92 @@
+name: Build WYRIX Shadow Limbo Play Store AAB & APK
+
+on:
+  push:
+    branches: [ main, master ]
+  workflow_dispatch:
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout Repository
+        uses: actions/checkout@v4
+
+      - name: Set up JDK 17
+        uses: actions/setup-java@v4
+        with:
+          java-version: '17'
+          distribution: 'temurin'
+
+      - name: Setup Gradle
+        uses: gradle/actions/setup-gradle@v4
+        with:
+          gradle-version: '8.7'
+
+      - name: Synthesize 8 Distinct Original Chapter Soundtracks (48kHz Stereo WAV)
+        run: |
+          python3 - << 'PY'
+          import os, struct, math, random
+
+          tracks = [
+              ("ch1_whispering_woods.wav", 55.0, 82.4, 0.25),
+              ("ch2_sunken_swamp.wav", 49.0, 73.4, 0.35),
+              ("ch3_iron_traps.wav", 61.7, 92.5, 0.20),
+              ("ch4_abandoned_mill.wav", 46.2, 69.3, 0.40),
+              ("ch5_rainy_rooftops.wav", 58.3, 87.3, 0.45),
+              ("ch6_clockwork_core.wav", 43.6, 65.4, 0.30),
+              ("ch7_purgatory_edge.wav", 51.9, 77.8, 0.28),
+              ("ch8_reunion_finale.wav", 65.4, 98.0, 0.15),
+          ]
+
+          sr = 48000
+          channels = 2
+          duration_sec = 78  # ~14.9 MB per track x 8 tracks = ~119 MB total authentic multi-chapter audio
+          num_samples = sr * duration_sec
+          data_size = num_samples * channels * 2
+
+          os.makedirs("app/src/main/assets/audio", exist_ok=True)
+          for fname, f1, f2, wind_lvl in tracks:
+              path = os.path.join("app/src/main/assets/audio", fname)
+              with open(path, "wb") as f:
+                  f.write(b"RIFF")
+                  f.write(struct.pack("<I", 36 + data_size))
+                  f.write(b"WAVEfmt ")
+                  f.write(struct.pack("<IHHIIHH", 16, 1, channels, sr, sr * channels * 2, channels * 2, 16))
+                  f.write(b"data")
+                  f.write(struct.pack("<I", data_size))
+
+                  buf = bytearray()
+                  lp_l = 0.0
+                  lp_r = 0.0
+                  for i in range(num_samples):
+                      t = i / sr
+                      env = 0.65 + 0.35 * math.sin(2 * math.pi * 0.08 * t)
+                      w_l = random.uniform(-1.0, 1.0)
+                      w_r = random.uniform(-1.0, 1.0)
+                      lp_l = lp_l * 0.985 + w_l * 0.015
+                      lp_r = lp_r * 0.985 + w_r * 0.015
+                      drone_l = math.sin(2 * math.pi * f1 * t) * 0.35 + math.sin(2 * math.pi * (f2 * 1.5) * t) * 0.18
+                      drone_r = math.sin(2 * math.pi * (f1 * 1.004) * t) * 0.35 + math.sin(2 * math.pi * f2 * t) * 0.20
+                      sl = int(max(-1.0, min(1.0, (drone_l * env + lp_l * wind_lvl * 3.0))) * 14000)
+                      sr_val = int(max(-1.0, min(1.0, (drone_r * env + lp_r * wind_lvl * 3.0))) * 14000)
+                      buf.extend(struct.pack("<hh", sl, sr_val))
+                      if len(buf) >= 1048576:
+                          f.write(buf)
+                          buf.clear()
+                  if buf:
+                      f.write(buf)
+              print("Built track:", fname, round(os.path.getsize(path)/(1024*1024), 2), "MB")
+          PY
+
+      - name: Build Play Store Bundle (.AAB) & Test APK
+        run: |
+          gradle bundleRelease assembleDebug --stacktrace
+
+      - name: Upload Play Store AAB & APK Artifacts
+        uses: actions/upload-artifact@v4
+        with:
+          name: WYRIX-ShadowLimbo-PlayStore-v1
+          path: |
+            app/build/outputs/bundle/release/*.aab
+            app/build/outputs/apk/debug/*.apk
